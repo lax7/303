@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demystifying Subnets: An Interactive Guide</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for modern tech typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(120% 120% at 50% 0%, #0f172a 30%, #020617 100%);
+        }
+        .heading-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .bit-box {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bit-box:hover {
+            transform: translateY(-2px);
+        }
+        .slice-card {
+            transition: all 0.2s ease;
+        }
+        .slice-card:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen pb-20 selection:bg-indigo-500 selection:text-white bg-slate-950">
+
+    <header class="relative overflow-hidden pt-16 pb-12 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-xl">
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+        <div class="max-w-6xl mx-auto px-6 text-center relative z-10">
+            <span class="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 uppercase">Networking & Computer Science 101</span>
+            <h1 class="heading-font text-4xl md:text-6xl font-extrabold tracking-tight mt-6 bg-gradient-to-r from-indigo-200 via-sky-300 to-emerald-300 bg-clip-text text-transparent">
+                Demystifying Subnets
+            </h1>
+            <p class="mt-4 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-light leading-relaxed">
+                No dry math. No confusing jargon. Master IPv4 subnetting, CIDR notation, and IP bitmasks through interactive simulations, visual slicers, and practical scenarios.
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-6 mt-10 space-y-16">
+
+        <nav class="bg-slate-900/90 border border-slate-800 rounded-2xl p-2 sticky top-4 z-50 backdrop-blur-md flex flex-wrap gap-2 justify-center md:justify-around max-w-4xl mx-auto shadow-2xl">
+            <button onclick="scrollToSection('analogy-sec')" class="px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold text-indigo-400 hover:bg-slate-800/90 transition-all">1. Core Analogy</button>
+            <button onclick="scrollToSection('anatomy-sec')" class="px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold text-sky-400 hover:bg-slate-800/90 transition-all">2. IP Anatomy & Bits</button>
+            <button onclick="scrollToSection('simulator-sec')" class="px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold text-emerald-400 hover:bg-slate-800/90 transition-all">3. Subnet Slicer</button>
+            <button onclick="scrollToSection('calculator-sec')" class="px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold text-amber-400 hover:bg-slate-800/90 transition-all">4. Subnet Calculator</button>
+            <button onclick="scrollToSection('quiz-sec')" class="px-3.5 py-2 rounded-xl text-xs md:text-sm font-semibold text-pink-400 hover:bg-slate-800/90 transition-all">5. Mission Challenge</button>
+        </nav>
+
+        <section id="analogy-sec" class="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 md:p-8 relative backdrop-blur-sm">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-3xl">💡</span>
+                <h2 class="heading-font text-2xl md:text-3xl font-bold text-white">What on Earth is a Subnet?</h2>
+            </div>
+            
+            <p class="text-slate-300 leading-relaxed text-base md:text-lg mb-6">
+                The internet connects billions of devices worldwide. If all of these devices were placed into one massive unorganized pool, every piece of data broadcast would flood every device simultaneously! To bring order, performance, and security, network engineers use <strong class="text-indigo-400 font-semibold">Subnets</strong> (short for <em class="not-italic text-sky-400 font-semibold">Subnetworks</em>)—dividing a large IP network into smaller, logical sub-sections.
+            </p>
+
+            <div class="bg-slate-950 rounded-2xl p-5 border border-slate-800/80">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-slate-800/50">
+                    <div>
+                        <h3 class="font-bold text-lg text-slate-100">Choose Your Mental Model:</h3>
+                        <p class="text-xs text-slate-400">Toggle between real-world analogies to grasp the subnet concept.</p>
+                    </div>
+                    <div class="bg-slate-900 p-1 rounded-xl border border-slate-700/50 flex gap-1">
+                        <button id="btn-school-analogy" onclick="switchAnalogy('school')" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-md">🏫 School Campus</button>
+                        <button id="btn-castle-analogy" onclick="switchAnalogy('castle')" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">🏰 Castles & Guards</button>
+                    </div>
+                </div>
+
+                <!-- School View -->
+                <div id="school-analogy-view" class="space-y-4">
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800">
+                            <div class="text-3xl mb-2">🏫</div>
+                            <h4 class="font-bold text-indigo-300 text-sm uppercase tracking-wider mb-1">The School (Main Network)</h4>
+                            <p class="text-xs text-slate-400">The entire school building, holding 1,000 students. It has one master street address for incoming mail.</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800">
+                            <div class="text-3xl mb-2">🚪</div>
+                            <h4 class="font-bold text-sky-300 text-sm uppercase tracking-wider mb-1">Classrooms (Subnets)</h4>
+                            <p class="text-xs text-slate-400">Enclosed rooms (Math, Computer Science, Art). Students inside can talk directly to each other without disturbing other rooms.</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800">
+                            <div class="text-3xl mb-2">🚶</div>
+                            <h4 class="font-bold text-emerald-300 text-sm uppercase tracking-wider mb-1">Hall Pass Runners (Routers)</h4>
+                            <p class="text-xs text-slate-400">If a Math student needs to send a message to an Art student, they can't shout through the wall. They hand it to a hallway runner (router) to cross room boundaries.</p>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-950/40 p-4 rounded-xl border border-indigo-800/30 text-xs md:text-sm text-indigo-200">
+                        ✨ <strong>Key Takeaway:</strong> Subnetting keeps local traffic contained inside the classroom so the entire school doesn't suffer from constant noise and chatter (Broadcast Storms).
+                    </div>
+                </div>
+
+                <!-- Castle View -->
+                <div id="castle-analogy-view" class="hidden space-y-4">
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800">
+                            <div class="text-3xl mb-2">👑</div>
+                            <h4 class="font-bold text-indigo-300 text-sm uppercase tracking-wider mb-1">The Kingdom (Main Network)</h4>
+                            <p class="text-xs text-slate-400">The entire realm under a single banner. Shared boundaries protect the whole land.</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800">
+                            <div class="text-3xl mb-2">🏰</div>
+                            <h4 class="font-bold text-sky-300 text-sm uppercase tracking-wider mb-1">Fortified Keeps (Subnets)</h4>
+                            <p class="text-xs text-slate-400">Independent walled keeps (The Treasury, Soldiers' Barracks, Royal Quarters). Keeps keep secrets local and secure.</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-800">
+                            <div class="text-3xl mb-2">🏇</div>
+                            <h4 class="font-bold text-emerald-300 text-sm uppercase tracking-wider mb-1">Gate Messengers (Routers)</h4>
+                            <p class="text-xs text-slate-400">To pass supplies between the Treasury keep and the Barracks, armored couriers must verify passcodes at drawbridges.</p>
+                        </div>
+                    </div>
+                    <div class="bg-sky-950/40 p-4 rounded-xl border border-sky-800/30 text-xs md:text-sm text-sky-200">
+                        🛡️ <strong>Security Takeaway:</strong> If an intruder breaches the outer agricultural village keep, isolated subnets prevent them from walking straight into the financial treasury keep!
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="anatomy-sec" class="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 md:p-8 backdrop-blur-sm">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-3xl">📐</span>
+                <h2 class="heading-font text-2xl md:text-3xl font-bold text-white">Anatomy of an IP Address & Bit Mask</h2>
+            </div>
+
+            <p class="text-slate-300 leading-relaxed mb-6">
+                An IPv4 address consists of 32 binary bits grouped into 4 sections called <strong class="text-sky-400 font-semibold">octets</strong> (8 bits each), separated by dots. Every IP address splits into two distinct parts: the <span class="text-indigo-400 font-semibold">Network ID (Street Name)</span> and the <span class="text-emerald-400 font-semibold">Host ID (House Number)</span>.
+            </p>
+
+            <div class="grid md:grid-cols-5 gap-6 items-center mb-8">
+                <!-- IP Anatomy Card -->
+                <div class="md:col-span-3 bg-slate-950 p-6 rounded-2xl border border-slate-800 text-center shadow-inner">
+                    <p class="text-xs text-slate-500 uppercase tracking-widest font-bold mb-3">IP ADDRESS Breakdown (e.g., 192.168.1.45 /24)</p>
+                    <div class="text-3xl md:text-4xl font-extrabold inline-flex items-center gap-1 code-font tracking-tight my-2">
+                        <span class="text-indigo-400 bg-indigo-950/40 px-3 py-1 rounded-lg border border-indigo-500/30">192.168.1</span>
+                        <span class="text-slate-600">.</span>
+                        <span class="text-emerald-400 bg-emerald-950/40 px-3 py-1 rounded-lg border border-emerald-500/30">45</span>
+                    </div>
+                    <div class="flex justify-between items-center mt-6 text-xs font-bold border-t border-slate-800/80 pt-4 px-2">
+                        <div class="text-indigo-400 flex items-center gap-1">
+                            <span>◀</span> <span>NETWORK ID (24 bits)</span>
+                        </div>
+                        <div class="text-emerald-400 flex items-center gap-1">
+                            <span>HOST ID (8 bits)</span> <span>▶</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 space-y-4">
+                    <div class="bg-indigo-950/30 border border-indigo-900/40 p-4 rounded-xl">
+                        <h4 class="font-bold text-indigo-300 text-sm mb-1">🛣️ Network ID</h4>
+                        <p class="text-xs text-slate-400">Identifies the subnet. All devices on the same local physical network share identical network bits.</p>
+                    </div>
+                    <div class="bg-emerald-950/30 border border-emerald-900/40 p-4 rounded-xl">
+                        <h4 class="font-bold text-emerald-300 text-sm mb-1">💻 Host ID</h4>
+                        <p class="text-xs text-slate-400">Identifies a specific endpoint (laptop, server, phone, printer) within that subnet. Must be unique.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive 4th Octet Bit Flipper -->
+            <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+                    <div>
+                        <h3 class="font-bold text-lg text-white">Interactive Bit Mask Flipper</h3>
+                        <p class="text-xs text-slate-400">Click individual bits in the 4th octet to toggle between 1 (Network/Subnet bit) and 0 (Host bit).</p>
+                    </div>
+                    <div class="text-xs code-font bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 text-sky-400 font-bold self-start md:self-auto">
+                        Subnet Mask: <span id="interactive-mask-decimal" class="text-white">255.255.255.0</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-xl border border-slate-800">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-500 block mb-1">Octet 1</span>
+                            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-indigo-400 code-font text-sm font-bold">255</div>
+                            <div class="text-[10px] code-font text-slate-500 mt-1">11111111</div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-500 block mb-1">Octet 2</span>
+                            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-indigo-400 code-font text-sm font-bold">255</div>
+                            <div class="text-[10px] code-font text-slate-500 mt-1">11111111</div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-500 block mb-1">Octet 3</span>
+                            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-indigo-400 code-font text-sm font-bold">255</div>
+                            <div class="text-[10px] code-font text-slate-500 mt-1">11111111</div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 block mb-1">Octet 4 (Interactive)</span>
+                            <div id="interactive-octet4-dec" class="bg-indigo-950 p-2.5 rounded-lg border border-indigo-500/40 text-sky-400 code-font text-sm font-extrabold transition-all">0</div>
+                            <div id="interactive-mask-binary" class="flex justify-center gap-1 mt-2">
+                                <!-- Generated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 bg-slate-950 p-4 rounded-xl text-xs text-slate-300 flex items-start gap-3 border border-slate-800">
+                        <span class="text-xl">💡</span>
+                        <div>
+                            <p id="binary-explanation" class="leading-relaxed">
+                                All 8 bits in the 4th octet are set to 0 (Host bits). This provides 256 address slots (254 usable hosts) for a single /24 network.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="simulator-sec" class="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 md:p-8 backdrop-blur-sm">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">🔪</span>
+                    <div>
+                        <h2 class="heading-font text-2xl md:text-3xl font-bold text-white">The Subnet Slicer</h2>
+                        <p class="text-xs text-slate-400">Interactive Visual CIDR Network Divider</p>
+                    </div>
+                </div>
+                <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold self-start md:self-auto">Interactive Simulator</span>
+            </div>
+
+            <p class="text-slate-300 leading-relaxed mb-6">
+                Adjust the CIDR slider below to borrow host bits and slice our base network <code class="code-font text-indigo-300 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">192.168.1.0/24</code> into equal smaller subnet blocks.
+            </p>
+
+            <div class="grid lg:grid-cols-12 gap-6">
+                <!-- Left Controls -->
+                <div class="lg:col-span-5 bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-6">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="cidr-slider" class="text-xs font-bold text-slate-400 uppercase tracking-widest">CIDR Prefix Length</label>
+                            <span id="cidr-badge" class="bg-indigo-600 text-white px-2.5 py-0.5 rounded text-xs font-bold code-font">/24</span>
+                        </div>
+                        <input id="cidr-slider" type="range" min="24" max="30" value="24" class="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                        <div class="flex justify-between text-[10px] text-slate-500 font-bold mt-1.5 code-font">
+                            <span>/24</span>
+                            <span>/25</span>
+                            <span>/26</span>
+                            <span>/27</span>
+                            <span>/28</span>
+                            <span>/29</span>
+                            <span>/30</span>
+                        </div>
+                    </div>
+
+                    <!-- 32-Bit Subnet Mask Visualizer -->
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">32-Bit Mask Structure</h4>
+                            <div class="flex gap-2 text-[9px] font-bold">
+                                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-500"></span>Net</span>
+                                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-400"></span>Subnet</span>
+                                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>Host</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+                            <div class="flex flex-wrap items-center justify-between gap-y-3">
+                                <div class="flex flex-col items-center gap-1 flex-1 min-w-[60px]">
+                                    <div id="bit-map-oct1" class="flex gap-[2px]"></div>
+                                    <span id="bit-map-dec-oct1" class="text-xs font-bold text-indigo-400 code-font">255</span>
+                                </div>
+                                <span class="text-slate-600 font-extrabold text-xs">.</span>
+
+                                <div class="flex flex-col items-center gap-1 flex-1 min-w-[60px]">
+                                    <div id="bit-map-oct2" class="flex gap-[2px]"></div>
+                                    <span id="bit-map-dec-oct2" class="text-xs font-bold text-indigo-400 code-font">255</span>
+                                </div>
+                                <span class="text-slate-600 font-extrabold text-xs">.</span>
+
+                                <div class="flex flex-col items-center gap-1 flex-1 min-w-[60px]">
+                                    <div id="bit-map-oct3" class="flex gap-[2px]"></div>
+                                    <span id="bit-map-dec-oct3" class="text-xs font-bold text-indigo-400 code-font">255</span>
+                                </div>
+                                <span class="text-slate-600 font-extrabold text-xs">.</span>
+
+                                <div class="flex flex-col items-center gap-1 flex-1 min-w-[60px]">
+                                    <div id="bit-map-oct4" class="flex gap-[2px]"></div>
+                                    <span id="bit-map-dec-oct4" class="text-xs font-extrabold text-sky-400 code-font">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p id="simulator-bit-explanation" class="text-[11px] text-slate-400 leading-normal">
+                            Using /24: 24 Network bits and 8 Host bits.
+                        </p>
+                    </div>
+
+                    <!-- Live Breakdown Statistics -->
+                    <div class="space-y-2.5 pt-2">
+                        <div class="flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                            <span class="text-xs text-slate-400">Subnet Mask</span>
+                            <span id="stat-mask" class="text-xs md:text-sm font-bold code-font text-indigo-400">255.255.255.0</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                            <span class="text-xs text-slate-400">Borrowed Subnet Bits</span>
+                            <span id="stat-borrowed" class="text-xs md:text-sm font-bold code-font text-sky-400">0 bits</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                            <span class="text-xs text-slate-400">Total Subnets Created</span>
+                            <span id="stat-subnets" class="text-xs md:text-sm font-bold code-font text-emerald-400">1</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                            <span class="text-xs text-slate-400">Usable IPs / Subnet</span>
+                            <span id="stat-hosts" class="text-xs md:text-sm font-bold code-font text-pink-400">254</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-950/20 border border-amber-900/30 p-3.5 rounded-xl">
+                        <h4 class="text-amber-400 font-bold text-xs flex items-center gap-1.5 mb-1">
+                            ⚠️ Why subtract 2 usable IPs?
+                        </h4>
+                        <p class="text-[11px] text-slate-400 leading-relaxed">
+                            Every subnet reserves its very first IP as the <strong class="text-amber-300">Network Address</strong> and its last IP as the <strong class="text-amber-300">Broadcast Address</strong>. Neither can be assigned to individual hosts.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right Visual Slice Grid -->
+                <div class="lg:col-span-7 bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-xs text-slate-400 uppercase tracking-widest">Subnet Blocks Map</h3>
+                            <span class="text-[10px] text-slate-500 font-medium">Click any block to view ranges</span>
+                        </div>
+                        
+                        <div id="visual-blocks-container" class="grid gap-2 min-h-[180px] max-h-[380px] overflow-y-auto pr-1">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Active Subnet Detail Card -->
+                    <div id="selected-slice-card" class="mt-4 bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <h4 class="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2" id="slice-title">Subnet #1 Details</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                            <div class="flex justify-between border-b border-slate-800 pb-1.5">
+                                <span class="text-slate-500">Network IP:</span>
+                                <span class="font-semibold text-indigo-300 code-font" id="detail-net-ip">192.168.1.0</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1.5">
+                                <span class="text-slate-500">First Usable Host:</span>
+                                <span class="font-semibold text-emerald-300 code-font" id="detail-first-ip">192.168.1.1</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1.5">
+                                <span class="text-slate-500">Last Usable Host:</span>
+                                <span class="font-semibold text-emerald-300 code-font" id="detail-last-ip">192.168.1.254</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1.5">
+                                <span class="text-slate-500">Broadcast IP:</span>
+                                <span class="font-semibold text-pink-300 code-font" id="detail-broad-ip">192.168.1.255</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="calculator-sec" class="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 md:p-8 backdrop-blur-sm">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-3xl">🧮</span>
+                <div>
+                    <h2 class="heading-font text-2xl md:text-3xl font-bold text-white">Custom IPv4 Subnet Calculator</h2>
+                    <p class="text-xs text-slate-400">Calculate network details for any custom IPv4 address</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-6">
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="calc-ip-input" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">IPv4 Address</label>
+                        <input type="text" id="calc-ip-input" value="10.0.4.15" placeholder="e.g. 192.168.10.5" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm code-font text-indigo-300 focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                    <div>
+                        <label for="calc-cidr-select" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">CIDR Prefix</label>
+                        <select id="calc-cidr-select" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm code-font text-emerald-400 focus:outline-none focus:border-indigo-500 transition-colors">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button onclick="calculateCustomSubnet()" class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+                        <span>⚡ Calculate Subnet Details</span>
+                    </button>
+                </div>
+
+                <div id="calc-results" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-800/80">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500 block mb-1">Network Address</span>
+                        <span id="res-net-ip" class="text-sm font-bold code-font text-indigo-300">10.0.4.0</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500 block mb-1">Subnet Mask</span>
+                        <span id="res-mask" class="text-sm font-bold code-font text-sky-300">255.255.255.0</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500 block mb-1">Usable Host Range</span>
+                        <span id="res-range" class="text-xs font-bold code-font text-emerald-300">10.0.4.1 - 10.0.4.254</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500 block mb-1">Broadcast Address</span>
+                        <span id="res-broad-ip" class="text-sm font-bold code-font text-pink-300">10.0.4.255</span>
+                    </div>
+                </div>
+
+                <!-- Binary AND Visualization -->
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">How the Router Computes Network Address (Bitwise AND)</h4>
+                    <div class="text-xs code-font space-y-1 text-slate-300 pt-2 overflow-x-auto">
+                        <div class="flex justify-between gap-4"><span class="text-slate-500">IP Address:</span><span id="bit-and-ip">00001010.00000000.00000100.00001111</span></div>
+                        <div class="flex justify-between gap-4"><span class="text-slate-500">Subnet Mask:</span><span id="bit-and-mask">11111111.11111111.11111111.00000000</span></div>
+                        <div class="border-t border-slate-700 my-1"></div>
+                        <div class="flex justify-between gap-4 font-bold"><span class="text-indigo-400">Network ID:</span><span id="bit-and-net" class="text-indigo-400">00001010.00000000.00000100.00000000</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="quiz-sec" class="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 md:p-8 relative backdrop-blur-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">🎯</span>
+                    <div>
+                        <h2 class="heading-font text-2xl md:text-3xl font-bold text-white">SysAdmin Mission Challenge</h2>
+                        <p class="text-xs text-slate-400">Test your real-world subnetting knowledge</p>
+                    </div>
+                </div>
+                <div class="bg-slate-950 border border-slate-800 px-4 py-2 rounded-xl flex items-center gap-3 self-stretch sm:self-auto justify-between">
+                    <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Score:</span>
+                    <span id="quiz-score" class="text-lg font-extrabold text-pink-400">0/5</span>
+                </div>
+            </div>
+
+            <div id="quiz-box" class="bg-slate-950 p-6 rounded-2xl border border-slate-800">
+                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden mb-6">
+                    <div id="quiz-progress" class="bg-pink-500 h-full transition-all duration-300" style="width: 20%;"></div>
+                </div>
+
+                <div id="quiz-question-container">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2" id="question-number">Question 1 of 5</span>
+                    <h3 class="text-base md:text-lg font-bold text-white mb-6 leading-relaxed" id="question-text">Loading question...</h3>
+                    
+                    <div class="grid gap-3" id="options-container">
+                        <!-- Options generated by JS -->
+                    </div>
+                </div>
+
+                <div id="explanation-container" class="hidden mt-6 pt-6 border-t border-slate-800">
+                    <div id="explanation-status" class="p-3.5 rounded-xl text-sm font-semibold mb-4"></div>
+                    <p id="explanation-text" class="text-sm text-slate-300 mb-5 leading-relaxed"></p>
+                    <button id="next-btn" onclick="nextQuestion()" class="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-pink-500/20">
+                        Continue to Next Mission ➔
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="cheatsheet-sec" class="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 md:p-8 backdrop-blur-sm">
+            <h3 class="heading-font text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <span>📑</span> Quick CIDR Reference Sheet (/24 to /30)
+            </h3>
+            <div class="overflow-x-auto rounded-xl border border-slate-800">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+                        <tr>
+                            <th class="p-3">CIDR</th>
+                            <th class="p-3">Subnet Mask</th>
+                            <th class="p-3">Subnet Block Size</th>
+                            <th class="p-3">Subnets Created</th>
+                            <th class="p-3">Usable Hosts / Subnet</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 bg-slate-900/40 code-font">
+                        <tr><td class="p-3 text-indigo-400 font-bold">/24</td><td class="p-3">255.255.255.0</td><td class="p-3">256</td><td class="p-3">1</td><td class="p-3 text-pink-400 font-bold">254</td></tr>
+                        <tr><td class="p-3 text-indigo-400 font-bold">/25</td><td class="p-3">255.255.255.128</td><td class="p-3">128</td><td class="p-3">2</td><td class="p-3 text-pink-400 font-bold">126</td></tr>
+                        <tr><td class="p-3 text-indigo-400 font-bold">/26</td><td class="p-3">255.255.255.192</td><td class="p-3">64</td><td class="p-3">4</td><td class="p-3 text-pink-400 font-bold">62</td></tr>
+                        <tr><td class="p-3 text-indigo-400 font-bold">/27</td><td class="p-3">255.255.255.224</td><td class="p-3">32</td><td class="p-3">8</td><td class="p-3 text-pink-400 font-bold">30</td></tr>
+                        <tr><td class="p-3 text-indigo-400 font-bold">/28</td><td class="p-3">255.255.255.240</td><td class="p-3">16</td><td class="p-3">16</td><td class="p-3 text-pink-400 font-bold">14</td></tr>
+                        <tr><td class="p-3 text-indigo-400 font-bold">/29</td><td class="p-3">255.255.255.248</td><td class="p-3">8</td><td class="p-3">32</td><td class="p-3 text-pink-400 font-bold">6</td></tr>
+                        <tr><td class="p-3 text-indigo-400 font-bold">/30</td><td class="p-3">255.255.255.252</td><td class="p-3">4</td><td class="p-3">64</td><td class="p-3 text-pink-400 font-bold">2 (Point-to-Point)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let interactiveBits = [0, 0, 0, 0, 0, 0, 0, 0];
+        let currentQuizIndex = 0;
+        let score = 0;
+        let answerSubmitted = false;
+
+        const quizQuestions = [
+            {
+                question: "You need to assign IP addresses to a department with 50 employee laptops. What is the smallest CIDR prefix that provides enough usable host addresses?",
+                options: [
+                    { text: "/27 (30 usable hosts)", correct: false },
+                    { text: "/26 (62 usable hosts)", correct: true },
+                    { text: "/25 (126 usable hosts)", correct: false },
+                    { text: "/28 (14 usable hosts)", correct: false }
+                ],
+                explanation: "A /26 subnet gives a block size of 64 addresses, leaving 62 usable host IPs (64 - 2). /27 only provides 30 usable IPs which is insufficient for 50 devices."
+            },
+            {
+                question: "What is the reserved Broadcast IP address for the subnet network 192.168.1.64 /26?",
+                options: [
+                    { text: "192.168.1.65", correct: false },
+                    { text: "192.168.1.126", correct: false },
+                    { text: "192.168.1.127", correct: true },
+                    { text: "192.168.1.128", correct: false }
+                ],
+                explanation: "With /26, each block has 64 addresses. The range for this block starts at .64 and ends at .127. The last address (.127) is always reserved for broadcasting."
+            },
+            {
+                question: "Why can't you assign the address 192.168.1.0 to a web server in a 192.168.1.0/24 subnet?",
+                options: [
+                    { text: "It is reserved for the Default Gateway router", correct: false },
+                    { text: "It is reserved as the Network ID of the subnet", correct: true },
+                    { text: "It is an invalid IPv4 format", correct: false },
+                    { text: "It is reserved for broadcast messages", correct: false }
+                ],
+                explanation: "The very first address in any subnet (where host bits are all 0s) is reserved as the Network ID and identifies the subnet itself."
+            },
+            {
+                question: "Two routers are connected directly together over a point-to-point serial link. Which CIDR mask minimizes wasted IP addresses?",
+                options: [
+                    { text: "/30 (2 usable hosts)", correct: true },
+                    { text: "/28 (14 usable hosts)", correct: false },
+                    { text: "/24 (254 usable hosts)", correct: false },
+                    { text: "/32 (1 usable host)", correct: false }
+                ],
+                explanation: "A /30 prefix provides exactly 4 total addresses: 1 Network ID, 2 usable host IPs (one for each router interface), and 1 Broadcast ID. This prevents wasting public or private IPs."
+            },
+            {
+                question: "How many bits are borrowed from the host portion when subnetting a base /24 network into a /27 subnet mask?",
+                options: [
+                    { text: "2 bits", correct: false },
+                    { text: "3 bits", correct: true },
+                    { text: "5 bits", correct: false },
+                    { text: "8 bits", correct: false }
+                ],
+                explanation: "27 - 24 = 3 bits borrowed. Borrowing 3 bits creates 2^3 = 8 subnets."
+            }
+        ];
+
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function switchAnalogy(type) {
+            const schoolBtn = document.getElementById('btn-school-analogy');
+            const castleBtn = document.getElementById('btn-castle-analogy');
+            const schoolView = document.getElementById('school-analogy-view');
+            const castleView = document.getElementById('castle-analogy-view');
+
+            if (type === 'school') {
+                schoolBtn.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-md";
+                castleBtn.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white";
+                schoolView.classList.remove('hidden');
+                castleView.classList.add('hidden');
+            } else {
+                castleBtn.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-md";
+                schoolBtn.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white";
+                castleView.classList.remove('hidden');
+                schoolView.classList.add('hidden');
+            }
+        }
+
+        function renderInteractiveBits() {
+            const container = document.getElementById('interactive-mask-binary');
+            container.innerHTML = '';
+
+            let octetDecimal = 0;
+            const bitValues = [128, 64, 32, 16, 8, 4, 2, 1];
+
+            interactiveBits.forEach((bit, idx) => {
+                if (bit === 1) octetDecimal += bitValues[idx];
+
+                const btn = document.createElement('button');
+                btn.className = `w-6 h-7 rounded text-xs font-bold code-font border transition-all bit-box ${
+                    bit === 1 
+                        ? 'bg-sky-500 text-white border-sky-400 shadow-md shadow-sky-500/30' 
+                        : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-slate-300'
+                }`;
+                btn.innerText = bit;
+                btn.onclick = () => toggleBit(idx);
+                container.appendChild(btn);
+            });
+
+            document.getElementById('interactive-octet4-dec').innerText = octetDecimal;
+            document.getElementById('interactive-mask-decimal').innerText = `255.255.255.${octetDecimal}`;
+
+            const borrowed = interactiveBits.filter(b => b === 1).length;
+            const subnets = Math.pow(2, borrowed);
+            const totalHosts = Math.pow(2, 8 - borrowed);
+            const usableHosts = totalHosts > 2 ? totalHosts - 2 : 0;
+
+            const expEl = document.getElementById('binary-explanation');
+            expEl.innerHTML = `You have set <strong>${borrowed} borrowed subnet bits</strong> (1s) and <strong>${8 - borrowed} host bits</strong> (0s). This creates <strong>${subnets} subnet(s)</strong> with <strong>${usableHosts} usable host IPs</strong> each (Block size: ${totalHosts}).`;
+        }
+
+        function toggleBit(idx) {
+            // Maintain contiguous subnet mask bits rule (1s must be on left)
+            if (interactiveBits[idx] === 0) {
+                for (let i = 0; i <= idx; i++) interactiveBits[i] = 1;
+            } else {
+                for (let i = idx; i < 8; i++) interactiveBits[i] = 0;
+            }
+            renderInteractiveBits();
+        }
+
+        function updateSubnetSlicer() {
+            const cidr = parseInt(document.getElementById('cidr-slider').value);
+            document.getElementById('cidr-badge').innerText = `/${cidr}`;
+
+            const borrowedBits = cidr - 24;
+            const hostBits = 32 - cidr;
+            const totalSubnets = Math.pow(2, borrowedBits);
+            const totalBlockSize = Math.pow(2, hostBits);
+            const usableHosts = totalBlockSize > 2 ? totalBlockSize - 2 : 0;
+
+            // 4th octet decimal mask computation
+            let octet4Mask = 0;
+            for (let i = 0; i < borrowedBits; i++) {
+                octet4Mask += Math.pow(2, 7 - i);
+            }
+
+            const fullMask = `255.255.255.${octet4Mask}`;
+            document.getElementById('stat-mask').innerText = fullMask;
+            document.getElementById('stat-borrowed').innerText = `${borrowedBits} bit${borrowedBits === 1 ? '' : 's'}`;
+            document.getElementById('stat-subnets').innerText = totalSubnets;
+            document.getElementById('stat-hosts').innerText = usableHosts;
+
+            // Update 32-bit visual map display
+            render32BitMap(cidr, borrowedBits, octet4Mask);
+
+            // Update explanation text
+            document.getElementById('simulator-bit-explanation').innerHTML = 
+                `<strong>/${cidr} Mask Breakdown:</strong> 24 Network bits, <span class="text-sky-400 font-bold">${borrowedBits} Borrowed Subnet bits</span>, and <span class="text-emerald-400 font-bold">${hostBits} Host bits</span>.`;
+
+            // Build Visual Blocks Map
+            renderVisualBlocks(totalSubnets, totalBlockSize);
+        }
+
+        function render32BitMap(cidr, borrowedBits, octet4Mask) {
+            const renderOctetBits = (containerId, bitType) => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+                for (let i = 0; i < 8; i++) {
+                    const dot = document.createElement('span');
+                    let bg = 'bg-indigo-500';
+                    if (bitType === 'borrowed') {
+                        bg = i < borrowedBits ? 'bg-sky-400' : 'bg-emerald-400';
+                    }
+                    dot.className = `w-1.5 h-3 rounded-full ${bg}`;
+                    container.appendChild(dot);
+                }
+            };
+
+            renderOctetBits('bit-map-oct1', 'net');
+            renderOctetBits('bit-map-oct2', 'net');
+            renderOctetBits('bit-map-oct3', 'net');
+            renderOctetBits('bit-map-oct4', 'borrowed');
+
+            document.getElementById('bit-map-dec-oct4').innerText = octet4Mask;
+        }
+
+        function renderVisualBlocks(totalSubnets, blockSize) {
+            const container = document.getElementById('visual-blocks-container');
+            container.innerHTML = '';
+
+            let colsClass = 'grid-cols-1';
+            if (totalSubnets === 2) colsClass = 'grid-cols-2';
+            else if (totalSubnets === 4) colsClass = 'grid-cols-2 sm:grid-cols-4';
+            else if (totalSubnets === 8) colsClass = 'grid-cols-4 sm:grid-cols-8';
+            else if (totalSubnets >= 16) colsClass = 'grid-cols-4 sm:grid-cols-8';
+
+            container.className = `grid ${colsClass} gap-2 min-h-[160px] max-h-[380px] overflow-y-auto pr-1`;
+
+            for (let i = 0; i < totalSubnets; i++) {
+                const netOctet = i * blockSize;
+                const broadOctet = netOctet + blockSize - 1;
+
+                const block = document.createElement('div');
+                block.className = `slice-card bg-slate-900 hover:bg-indigo-950/60 p-3 rounded-xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer flex flex-col justify-between text-center transition-all ${
+                    i === 0 ? 'ring-2 ring-indigo-500/40 bg-indigo-950/30' : ''
+                }`;
+
+                block.innerHTML = `
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 block mb-1">Subnet #${i + 1}</span>
+                    <span class="text-xs font-bold code-font text-white">. ${netOctet}</span>
+                    <span class="text-[9px] code-font text-slate-500 mt-1">Range: .${netOctet} - .${broadOctet}</span>
+                `;
+
+                block.onclick = () => selectSlice(i + 1, `192.168.1.${netOctet}`, `192.168.1.${netOctet + 1}`, `192.168.1.${broadOctet - 1}`, `192.168.1.${broadOctet}`);
+                container.appendChild(block);
+            }
+
+            // Set default view details to Subnet #1
+            selectSlice(1, '192.168.1.0', '192.168.1.1', `192.168.1.${blockSize - 2}`, `192.168.1.${blockSize - 1}`);
+        }
+
+        function selectSlice(num, netIp, firstIp, lastIp, broadIp) {
+            document.getElementById('slice-title').innerText = `Subnet #${num} Range Breakdown`;
+            document.getElementById('detail-net-ip').innerText = netIp;
+            document.getElementById('detail-first-ip').innerText = firstIp;
+            document.getElementById('detail-last-ip').innerText = lastIp;
+            document.getElementById('detail-broad-ip').innerText = broadIp;
+        }
+
+        function initCalculatorOptions() {
+            const select = document.getElementById('calc-cidr-select');
+            select.innerHTML = '';
+            for (let c = 8; c <= 30; c++) {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.innerText = `/${c}`;
+                if (c === 24) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function calculateCustomSubnet() {
+            const ipStr = document.getElementById('calc-ip-input').value.trim();
+            const cidr = parseInt(document.getElementById('calc-cidr-select').value);
+
+            // Simple IPv4 regex validation
+            const ipPattern = /^^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            if (!ipPattern.test(ipStr)) {
+                alert("Please enter a valid IPv4 address (e.g. 192.168.1.15)");
+                return;
+            }
+
+            const ipParts = ipStr.split('.').map(Number);
+            let ipNum = (ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3];
+            // Unsigned shift trick
+            ipNum = ipNum >>> 0;
+
+            let maskNum = cidr === 0 ? 0 : (0xFFFFFFFF << (32 - cidr)) >>> 0;
+            let netNum = (ipNum & maskNum) >>> 0;
+            let broadNum = (netNum | (~maskNum >>> 0)) >>> 0;
+
+            const numToIp = (n) => [
+                (n >>> 24) & 255,
+                (n >>> 16) & 255,
+                (n >>> 8) & 255,
+                n & 255
+            ].join('.');
+
+            const toBinaryStr = (n) => [
+                ((n >>> 24) & 255).toString(2).padStart(8, '0'),
+                ((n >>> 16) & 255).toString(2).padStart(8, '0'),
+                ((n >>> 8) & 255).toString(2).padStart(8, '0'),
+                (n & 255).toString(2).padStart(8, '0')
+            ].join('.');
+
+            const netIp = numToIp(netNum);
+            const maskIp = numToIp(maskNum);
+            const broadIp = numToIp(broadNum);
+            const firstIp = numToIp(netNum + 1);
+            const lastIp = numToIp(broadNum - 1);
+
+            document.getElementById('res-net-ip').innerText = netIp;
+            document.getElementById('res-mask').innerText = maskIp;
+            document.getElementById('res-range').innerText = cidr >= 31 ? "N/A (Point-to-point/Host)" : `${firstIp} - ${lastIp}`;
+            document.getElementById('res-broad-ip').innerText = broadIp;
+
+            document.getElementById('bit-and-ip').innerText = toBinaryStr(ipNum);
+            document.getElementById('bit-and-mask').innerText = toBinaryStr(maskNum);
+            document.getElementById('bit-and-net').innerText = toBinaryStr(netNum);
+        }
+
+        function loadQuestion() {
+            answerSubmitted = false;
+            const q = quizQuestions[currentQuizIndex];
+            
+            document.getElementById('question-number').innerText = `Question ${currentQuizIndex + 1} of ${quizQuestions.length}`;
+            document.getElementById('question-text').innerText = q.question;
+            document.getElementById('quiz-progress').style.width = `${((currentQuizIndex + 1) / quizQuestions.length) * 100}%`;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            document.getElementById('explanation-container').classList.add('hidden');
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-850 text-slate-200 text-sm font-medium transition-all flex items-center justify-between";
+                btn.innerHTML = `<span>${opt.text}</span> <span class="text-xs text-slate-500 font-bold">${String.fromCharCode(65 + idx)}</span>`;
+                btn.onclick = () => selectOption(idx);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectOption(index) {
+            if (answerSubmitted) return;
+            answerSubmitted = true;
+
+            const q = quizQuestions[currentQuizIndex];
+            const isCorrect = q.options[index].correct;
+
+            if (isCorrect) score++;
+
+            document.getElementById('quiz-score').innerText = `${score}/${quizQuestions.length}`;
+
+            const optionsContainer = document.getElementById('options-container');
+            const buttons = optionsContainer.children;
+
+            for (let i = 0; i < buttons.length; i++) {
+                if (q.options[i].correct) {
+                    buttons[i].className = "w-full text-left p-4 rounded-xl bg-emerald-950/50 border-2 border-emerald-500 text-emerald-200 text-sm font-semibold flex items-center justify-between";
+                } else if (i === index && !isCorrect) {
+                    buttons[i].className = "w-full text-left p-4 rounded-xl bg-rose-950/50 border-2 border-rose-500 text-rose-200 text-sm font-semibold flex items-center justify-between";
+                } else {
+                    buttons[i].className = "w-full text-left p-4 rounded-xl bg-slate-900/40 border border-slate-800 text-slate-500 text-sm opacity-50";
+                }
+            }
+
+            const statusEl = document.getElementById('explanation-status');
+            if (isCorrect) {
+                statusEl.className = "p-3.5 rounded-xl text-sm font-bold bg-emerald-950/80 border border-emerald-800 text-emerald-300";
+                statusEl.innerText = "🎯 Outstanding! Correct Answer.";
+            } else {
+                statusEl.className = "p-3.5 rounded-xl text-sm font-bold bg-rose-950/80 border border-rose-800 text-rose-300";
+                statusEl.innerText = "❌ Not quite right.";
+            }
+
+            document.getElementById('explanation-text').innerText = q.explanation;
+            document.getElementById('explanation-container').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQuizIndex++;
+            if (currentQuizIndex < quizQuestions.length) {
+                loadQuestion();
+            } else {
+                showQuizResults();
+            }
+        }
+
+        function showQuizResults() {
+            const container = document.getElementById('quiz-box');
+            container.innerHTML = `
+                <div class="text-center py-8 space-y-4">
+                    <div class="text-5xl mb-2">🏆</div>
+                    <h3 class="heading-font text-2xl font-bold text-white">Mission Completed!</h3>
+                    <p class="text-slate-400 text-sm">Your final score: <strong class="text-pink-400 text-xl code-font">${score} / ${quizQuestions.length}</strong></p>
+                    <p class="text-xs text-slate-400 max-w-md mx-auto">
+                        ${score === 5 ? "Perfect score! You are officially a Subnetting Master!" : "Great effort! Review the Interactive Slicer above and try again for 100%."}
+                    </p>
+                    <button onclick="restartQuiz()" class="mt-4 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-indigo-600/20">
+                        🔄 Retake Challenge
+                    </button>
+                </div>
+            `;
+        }
+
+        function restartQuiz() {
+            currentQuizIndex = 0;
+            score = 0;
+            document.getElementById('quiz-score').innerText = `0/${quizQuestions.length}`;
+            location.hash = '#quiz-sec';
+            window.location.reload();
+        }
+
+        window.onload = function() {
+            renderInteractiveBits();
+            
+            const slider = document.getElementById('cidr-slider');
+            slider.addEventListener('input', updateSubnetSlicer);
+            updateSubnetSlicer();
+
+            initCalculatorOptions();
+            calculateCustomSubnet();
+
+            loadQuestion();
+        };
+    </script>
+</body>
+</html>
