@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pre-Class Prep · File Permissions &amp; ARP Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFBF9;
+    --ink:#16202E;
+    --ink-soft:#425066;
+    --line:#E2E1DA;
+    --panel:#15202E;
+    --panel-2:#1C293A;
+    --panel-ink:#E8EDF2;
+    --read:#2563EB;
+    --write:#D97706;
+    --exec:#059669;
+    --cyan:#0E7490;
+    --warn-bg:#FEF6E7;
+    --warn-line:#E7B24B;
+    --warn-ink:#7A4B08;
+    --radius:10px;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *,*::before,*::after{box-sizing:inherit}
+  html{scroll-padding-top:1rem;-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-size:17px;
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:clamp(1.1rem,4vw,2.4rem)}
+
+  /* ---- header ---- */
+  header.masthead{
+    border:1.5px solid var(--ink);
+    border-radius:var(--radius);
+    overflow:hidden;
+    margin-bottom:2.2rem;
+  }
+  .masthead .bar{
+    background:var(--panel);
+    color:var(--panel-ink);
+    font-family:"IBM Plex Mono",monospace;
+    font-size:.8rem;
+    letter-spacing:.02em;
+    padding:.5rem .95rem;
+    display:flex;gap:.55rem;align-items:center;
+  }
+  .masthead .bar .dot{width:11px;height:11px;border-radius:50%;background:#3A4759;flex:0 0 auto}
+  .masthead .bar .dot:nth-child(2){background:#4A5A70}
+  .masthead .bar .dot:nth-child(3){background:#5A6C86}
+  .masthead .bar span{margin-left:auto;opacity:.8}
+  .masthead .body{padding:1.5rem 1.4rem 1.6rem}
+  .masthead h1{
+    font-family:"Space Grotesk",sans-serif;
+    font-weight:700;
+    font-size:clamp(1.7rem,5.5vw,2.5rem);
+    line-height:1.08;
+    margin:0 0 .5rem;
+    letter-spacing:-.01em;
+  }
+  .masthead p{margin:0;color:var(--ink-soft);max-width:52ch}
+
+  /* ---- sections ---- */
+  section{margin:0 0 2.6rem}
+  .kicker{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:.82rem;
+    color:var(--cyan);
+    font-weight:600;
+    margin:0 0 .3rem;
+  }
+  h2{
+    font-family:"Space Grotesk",sans-serif;
+    font-weight:600;
+    font-size:clamp(1.35rem,4vw,1.7rem);
+    line-height:1.15;
+    margin:0 0 .9rem;
+    letter-spacing:-.01em;
+    scroll-margin-top:1rem;
+  }
+  .pts{
+    display:inline-block;vertical-align:middle;
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;
+    color:#fff;background:var(--cyan);
+    padding:.14rem .55rem;border-radius:20px;margin-left:.55rem;
+    letter-spacing:.02em;
+  }
+  .deliverables{
+    border:1.5px solid var(--ink);border-radius:var(--radius);
+    padding:.9rem 1.1rem;margin:1.1rem 0 0;background:#fff;
+  }
+  .deliverables p{margin:0 0 .5rem;font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--cyan);font-weight:600}
+  .deliverables ul{margin:0;padding-left:1.15rem}
+  .deliverables li{margin:.25rem 0}
+  h3{
+    font-family:"Space Grotesk",sans-serif;
+    font-weight:600;
+    font-size:1.12rem;
+    margin:2rem 0 .55rem;
+  }
+  p{margin:0 0 1rem}
+  a{color:var(--cyan);text-decoration-thickness:1px;text-underline-offset:2px}
+
+  /* ---- code ---- */
+  code{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:.9em;
+    background:#EEEDE6;
+    padding:.08em .38em;
+    border-radius:4px;
+  }
+  .cmd{
+    background:var(--panel);
+    color:var(--panel-ink);
+    border-radius:var(--radius);
+    font-family:"IBM Plex Mono",monospace;
+    font-size:.9rem;
+    line-height:1.7;
+    padding:.95rem 1.05rem;
+    margin:.2rem 0 1.2rem;
+    overflow-x:auto;
+  }
+  .cmd .l{display:block;white-space:pre}
+  .cmd .p{color:#6FE0C8;user-select:none}
+  .cmd .c{color:#7C8BA1}
+
+  /* ---- permission ref ---- */
+  .perm{display:flex;flex-wrap:wrap;gap:.6rem;margin:0 0 1.2rem}
+  .perm .bit{
+    flex:1 1 150px;
+    border:1.5px solid var(--line);
+    border-radius:var(--radius);
+    padding:.7rem .85rem;
+    background:#fff;
+  }
+  .perm .bit b{font-family:"IBM Plex Mono",monospace;font-size:1.15rem;display:block}
+  .perm .bit .r{color:var(--read)}
+  .perm .bit .w{color:var(--write)}
+  .perm .bit .x{color:var(--exec)}
+  .perm .bit small{color:var(--ink-soft);font-size:.82rem}
+
+  table{width:100%;border-collapse:collapse;margin:0 0 1.2rem;font-size:.92rem}
+  th,td{text-align:left;padding:.5rem .6rem;border-bottom:1px solid var(--line)}
+  th{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.82rem;color:var(--ink-soft)}
+  td code{background:none;padding:0}
+
+  /* ---- exercise / checklist ---- */
+  .task{
+    border:1.5px solid var(--line);
+    border-left:4px solid var(--cyan);
+    border-radius:var(--radius);
+    padding:.25rem 1rem .4rem;
+    margin:0 0 1rem;
+    background:#fff;
+  }
+  .check{display:flex;gap:.7rem;align-items:flex-start;padding:.55rem 0;border-bottom:1px solid var(--line)}
+  .check:last-child{border-bottom:none}
+  .check input{
+    appearance:none;-webkit-appearance:none;
+    flex:0 0 auto;width:20px;height:20px;margin-top:.18em;
+    border:1.7px solid var(--ink-soft);border-radius:5px;background:#fff;cursor:pointer;
+    position:relative;transition:background .12s,border-color .12s;
+  }
+  .check input:checked{background:var(--exec);border-color:var(--exec)}
+  .check input:checked::after{
+    content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;
+    border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(43deg);
+  }
+  .check input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .check label{cursor:pointer;flex:1}
+  .check label .step{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--cyan);display:block}
+  .check input:checked + label{color:var(--ink-soft);text-decoration:line-through;text-decoration-color:var(--line)}
+
+  .shot{
+    display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;
+    background:#EDEFF4;color:var(--ink);padding:.12rem .5rem;border-radius:20px;margin-left:.35rem;vertical-align:middle;
+  }
+
+  /* ---- notice ---- */
+  .notice{
+    background:var(--warn-bg);
+    border:1.5px solid var(--warn-line);
+    border-radius:var(--radius);
+    padding:1rem 1.1rem;
+    margin:0 0 1.4rem;
+    color:var(--warn-ink);
+    font-size:.95rem;
+  }
+  .notice b{font-weight:600}
+  .notice::before{content:"⚠  ";font-weight:700}
+
+  .video{
+    display:flex;gap:.9rem;align-items:center;
+    border:1.5px dashed var(--ink-soft);border-radius:var(--radius);
+    padding:.9rem 1rem;margin:0 0 1.3rem;background:#fff;
+  }
+  .video .play{
+    flex:0 0 auto;width:40px;height:40px;border-radius:50%;background:var(--panel);
+    display:grid;place-items:center;
+  }
+  .video .play::after{content:"";border-left:12px solid #6FE0C8;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:3px}
+  .video div{font-size:.92rem}
+  .video a{font-weight:600}
+
+  .foot{
+    border-top:1.5px solid var(--ink);
+    margin-top:2.5rem;padding-top:1rem;
+    font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink-soft);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;
+  }
+  .foot button{
+    font-family:inherit;font-size:.78rem;color:var(--ink-soft);
+    background:none;border:1px solid var(--line);border-radius:6px;padding:.25rem .6rem;cursor:pointer;
+  }
+  .foot button:hover{border-color:var(--ink-soft)}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  @media print{
+    body{background:#fff;font-size:12px}
+    .wrap{max-width:100%}
+    .cmd{background:#f3f3f3;color:#000;border:1px solid #ccc}
+    .cmd .p,.cmd .c{color:#555}
+    .foot button,.masthead .bar .dot{display:none}
+    .task,.notice,.video,.perm .bit{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="bar">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span>~/labs/pre-class-prep</span>
+    </div>
+    <div class="body">
+      <h1>Pre-Class Prep</h1>
+      <p>Two things to finish before we meet: get comfortable changing file permissions with <code>chmod</code>, then work through the ARP cache poisoning lab. Tick items as you go — progress saves in this browser.</p>
+    </div>
+  </header>
+
+  <!-- ============ PART 1 ============ -->
+  <section id="chmod">
+    <p class="kicker">Part 1 — Linux</p>
+    <h2>A quick tour of <code>chmod</code><span class="pts">4 points</span></h2>
+    <p>Every file and directory on Linux carries permissions for three classes of user: the <b>owner</b>, the <b>group</b>, and <b>others</b> (everyone else). Each class can be granted three actions:</p>
+
+    <div class="perm">
+      <div class="bit"><b class="r">r</b><small>read — view the file / list a folder. Value <b class="r">4</b></small></div>
+      <div class="bit"><b class="w">w</b><small>write — change the file / add &amp; remove in a folder. Value <b class="w">2</b></small></div>
+      <div class="bit"><b class="x">x</b><small>execute — run the file / enter a folder. Value <b class="x">1</b></small></div>
+    </div>
+
+    <h3>Reading <code>ls -l</code></h3>
+    <p>Run <code>ls -l</code> and the first column shows the permissions as a 10-character string:</p>
+    <div class="cmd"><span class="l">-rwxr-xr--  1  alice  staff  …  notes.txt</span><span class="l"><span class="c"> ^└┬┘└┬┘└┬┘</span></span><span class="l"><span class="c"> │  │   │   └─ others: r--  (read only)</span></span><span class="l"><span class="c"> │  │   └───── group : r-x  (read + execute)</span></span><span class="l"><span class="c"> │  └───────── owner : rwx  (read + write + execute)</span></span><span class="l"><span class="c"> └──────────── type  : -    (- file, d directory)</span></span></div>
+
+    <h3>Two ways to set permissions</h3>
+    <p><b>Symbolic</b> — say <i>who</i> (<code>u</code>ser, <code>g</code>roup, <code>o</code>thers, <code>a</code>ll), then <code>+</code> add, <code>-</code> remove, or <code>=</code> set exactly, then the letters:</p>
+    <div class="cmd"><span class="l"><span class="p">$</span> chmod u+x script.sh      <span class="c"># give the owner execute</span></span><span class="l"><span class="p">$</span> chmod go-w notes.txt     <span class="c"># remove write from group + others</span></span><span class="l"><span class="p">$</span> chmod a=r shared.txt      <span class="c"># everyone: read only</span></span></div>
+
+    <p><b>Numeric (octal)</b> — add the values (r=4, w=2, x=1) for each class, in the order owner-group-others:</p>
+    <table>
+      <thead><tr><th>Octal</th><th>Symbolic</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>755</code></td><td><code>rwxr-xr-x</code></td><td>Owner full; group &amp; others read + run (typical script/folder)</td></tr>
+        <tr><td><code>644</code></td><td><code>rw-r--r--</code></td><td>Owner read+write; everyone else read (typical file)</td></tr>
+        <tr><td><code>600</code></td><td><code>rw-------</code></td><td>Owner read+write; no one else (private file)</td></tr>
+        <tr><td><code>700</code></td><td><code>rwx------</code></td><td>Owner full; no one else (private folder/script)</td></tr>
+      </tbody>
+    </table>
+    <div class="cmd"><span class="l"><span class="p">$</span> chmod 644 notes.txt      <span class="c"># same as u=rw,go=r</span></span></div>
+
+    <h3>Exercise — create a file &amp; flip its permissions</h3>
+    <p>Do these in a terminal. You'll capture <b>two screenshots</b>: the permissions <i>before</i> and <i>after</i> your change.</p>
+
+    <div class="task" data-task="ex1">
+      <div class="check"><input type="checkbox" id="e1"><label for="e1"><span class="step">step 1 · create</span>Make a file: <code>touch prep.sh</code> &nbsp;(or <code>echo 'echo hi' &gt; prep.sh</code>)</label></div>
+      <div class="check"><input type="checkbox" id="e2"><label for="e2"><span class="step">step 2 · inspect (before)</span>Check its current permissions: <code>ls -l prep.sh</code> <span class="shot">📸 BEFORE screenshot</span></label></div>
+      <div class="check"><input type="checkbox" id="e3"><label for="e3"><span class="step">step 3 · change</span>Make it owner-executable: <code>chmod u+x prep.sh</code> &nbsp;(or try <code>chmod 700 prep.sh</code>)</label></div>
+      <div class="check"><input type="checkbox" id="e4"><label for="e4"><span class="step">step 4 · inspect (after)</span>Confirm the change: <code>ls -l prep.sh</code> — the string should now show an <code>x</code> <span class="shot">📸 AFTER screenshot</span></label></div>
+      <div class="check"><input type="checkbox" id="e5"><label for="e5"><span class="step">step 5 · save</span>Save both screenshots to hand in (name them <code>before</code> / <code>after</code>).</label></div>
+    </div>
+    <div class="deliverables">
+      <p>Hand in — 4 points</p>
+      <ul>
+        <li>Create a file &nbsp;<b>(1)</b></li>
+        <li>📸 <b>Before</b> screenshot — <code>ls -l</code> showing the original permissions &nbsp;<b>(1)</b></li>
+        <li>Change the permissions with <code>chmod</code> &nbsp;<b>(1)</b></li>
+        <li>📸 <b>After</b> screenshot — <code>ls -l</code> showing the new permissions &nbsp;<b>(1)</b></li>
+      </ul>
+    </div>
+    <p style="font-size:.9rem;color:var(--ink-soft)">Tip: to capture a screenshot — Linux <code>PrtSc</code> or <code>gnome-screenshot</code>, macOS <code>⌘⇧4</code>, Windows <code>Win+Shift+S</code>. Make sure the whole <code>ls -l</code> line is visible.</p>
+  </section>
+
+  <!-- ============ PART 2 ============ -->
+  <section id="arp">
+    <p class="kicker">Part 2 — Network security lab</p>
+    <h2>ARP cache poisoning<span class="pts">6 points</span></h2>
+
+    
+    <div class="video">
+      <span class="play" aria-hidden="true"></span>
+      <div><b>Step 0 — watch the assigned recording first.</b><br><a href="https://myerauedu-my.sharepoint.com/:v:/g/personal/niurekal_erau_edu/IQAKBUaMXBtVRqYp0DULV_VdAUnsWm_pJcUj_ZxZRpkCLlg?e=Z6MpiV" id="videolink" target="_blank" rel="noopener">ARP Cache Poisoning — Meeting Recording (Sep 23) ↗</a> &nbsp;<span style="color:var(--ink-soft);font-size:.85em">(opens in SharePoint — sign in with your ERAU account)</span></div>
+    </div>
+
+    <h3>What you're doing (in one paragraph)</h3>
+    <p>Hosts on a LAN use <b>ARP</b> to map IP addresses to MAC addresses, and they update their cache from incoming ARP messages without verifying them — including unsolicited <b>ARP requests</b> (opcode 1), whose sender fields a host will happily record. In a poisoning attack you send forged ARP requests so a victim and the gateway each store the <i>attacker's</i> MAC for the other's IP. Watch the video, then <b>repeat the attack in your own virtual environment</b> using your <b>Python script</b> (Scapy, <code>op=1</code>), and confirm it by inspecting the poisoned host's ARP cache before and after.</p>
+
+    <div class="deliverables">
+      <p>Hand in — 6 points</p>
+      <ul>
+        <li>📸 Screenshot of your <b>Python code</b> (the Scapy poisoning script) &nbsp;<b>(2)</b></li>
+        <li>📸 <b>Before</b> — the poisoned host's ARP cache (<code>arp -a</code>) showing the gateway's <i>real</i> MAC &nbsp;<b>(2)</b></li>
+        <li>📸 <b>After</b> — the same host's ARP cache showing the gateway IP now mapped to the <i>attacker's</i> MAC &nbsp;<b>(2)</b></li>
+      </ul>
+    </div>
+    <p style="font-size:.9rem;color:var(--ink-soft)">Run everything against the machine you're poisoning — the before/after must be that <b>same host's</b> ARP cache so the changed MAC is visible. Follow the exact steps your video/instructor gives; this checklist is the shape of the task, not a substitute for the assigned method.</p>
+  </section>
+
+  <div class="foot">
+    <span>pre-class-prep · part 1 (4 pts) + part 2 (6 pts) · bring 5 screenshots</span>
+    <button id="reset" type="button">reset checkboxes</button>
+  </div>
+
+</div>
+
+<script>
+  // Lightweight progress persistence (works when the file is opened locally).
+  var KEY = "preclass-prep-v1";
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input[type=checkbox]'));
+
+  function load(){
+    try{
+      var saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+      boxes.forEach(function(b){ if(saved[b.id]) b.checked = true; });
+    }catch(e){/* storage unavailable — start unchecked */}
+  }
+  function save(){
+    try{
+      var state = {};
+      boxes.forEach(function(b){ if(b.checked) state[b.id] = 1; });
+      localStorage.setItem(KEY, JSON.stringify(state));
+    }catch(e){/* ignore */}
+  }
+  boxes.forEach(function(b){ b.addEventListener('change', save); });
+  document.getElementById('reset').addEventListener('click', function(){
+    boxes.forEach(function(b){ b.checked = false; });
+    try{ localStorage.removeItem(KEY); }catch(e){}
+  });
+
+  load();
+</script>
+</body>
+</html>
