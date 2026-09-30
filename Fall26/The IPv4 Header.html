@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The IPv4 Header</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#EDF1EF; --surface:#F8FAF9; --ink:#22302B; --muted:#5C6B66; --line:#CDD7D3;
+  --accent:#3F7D6E; --accent-ink:#FFFFFF;
+  --s1:#CFE2F0; --s2:#E6DCF2; --s3:#F2E5C6; --s4:#D5EADB;
+  --locked:#E1E6E4; --locked-ink:#9AA7A2;
+  --good:#2F7A4F; --bad:#A1473D; --code-bg:#23302C; --code-ink:#E3ECE8;
+  --sans:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#1A2120; --surface:#222B29; --ink:#DCE5E1; --muted:#98A8A2; --line:#34413D;
+    --accent:#6FB3A1; --accent-ink:#10201B;
+    --s1:#2C4254; --s2:#3E3552; --s3:#4D432B; --s4:#2D4636;
+    --locked:#262F2D; --locked-ink:#5E6D68;
+    --good:#7CC79B; --bad:#E08C80; --code-bg:#141A19; --code-ink:#DCE5E1;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1A2120; --surface:#222B29; --ink:#DCE5E1; --muted:#98A8A2; --line:#34413D;
+  --accent:#6FB3A1; --accent-ink:#10201B;
+  --s1:#2C4254; --s2:#3E3552; --s3:#4D432B; --s4:#2D4636;
+  --locked:#262F2D; --locked-ink:#5E6D68;
+  --good:#7CC79B; --bad:#E08C80; --code-bg:#141A19; --code-ink:#DCE5E1;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:1.0625rem;line-height:1.6}
+main{max-width:860px;margin:0 auto;padding:2.5rem 1.25rem 4rem}
+h1{font-size:2.1rem;line-height:1.15;margin:0 0 .4rem}
+h2{font-size:1.4rem;margin:3rem 0 .5rem}
+h3{font-size:1.1rem;margin:0 0 .3rem}
+p{margin:.4rem 0 1rem;max-width:68ch}
+.lead{color:var(--muted);font-size:1.1rem}
+code,.mono{font-family:var(--mono);font-size:.92em}
+
+/* progress */
+.progress{display:flex;gap:.5rem;margin:1.5rem 0 1rem;flex-wrap:wrap}
+.pill{padding:.3rem .8rem;border-radius:999px;border:1px solid var(--line);font-size:.9rem;color:var(--muted);background:var(--surface)}
+.pill.on{border-color:var(--accent);color:var(--ink)}
+.pill.done{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* header diagram */
+.diagram-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem}
+.diagram{min-width:600px}
+.ruler{display:grid;grid-template-columns:repeat(32,1fr);font-family:var(--mono);font-size:.68rem;color:var(--muted);text-align:center;margin-bottom:.25rem}
+.ruler span:nth-child(8n+1){color:var(--ink);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(32,1fr);gap:4px}
+.f{appearance:none;border:0;border-radius:8px;min-height:62px;padding:.4rem .3rem;font:inherit;font-size:.88rem;line-height:1.2;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;transition:transform .15s, box-shadow .15s}
+.f small{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.f[data-stage="1"]{background:var(--s1)} .f[data-stage="2"]{background:var(--s2)}
+.f[data-stage="3"]{background:var(--s3)} .f[data-stage="4"]{background:var(--s4)}
+.f.locked{background:var(--locked);color:var(--locked-ink);cursor:not-allowed}
+.f.locked small{color:var(--locked-ink)}
+.f:not(.locked):hover{transform:translateY(-1px)}
+.f.seen{box-shadow:inset 0 0 0 2px var(--accent)}
+.f.active{box-shadow:inset 0 0 0 3px var(--ink)}
+.f:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.f.new:not(.seen)::after{content:"tap";font-size:.65rem;color:var(--accent);font-weight:700}
+.legend{display:flex;justify-content:space-between;color:var(--muted);font-size:.85rem;margin-top:.6rem;flex-wrap:wrap;gap:.5rem}
+
+/* detail panel */
+.detail{margin-top:1rem;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:12px;padding:1.1rem 1.25rem;min-height:120px}
+.detail .meta{display:flex;gap:1rem;flex-wrap:wrap;color:var(--muted);font-size:.9rem;margin-bottom:.4rem}
+.detail .key{background:var(--bg);border-radius:8px;padding:.5rem .75rem;margin-top:.5rem;font-size:.95rem}
+.detail p{margin:.2rem 0}
+
+/* quiz */
+.quiz{margin-top:1.5rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.25rem}
+.quiz[hidden]{display:none}
+.q{margin-bottom:1.25rem}
+.q:last-of-type{margin-bottom:.5rem}
+.q-text{font-weight:700;margin-bottom:.5rem}
+.opts{display:grid;gap:.45rem}
+.opt{appearance:none;text-align:left;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:.6rem .85rem;cursor:pointer}
+.opt:hover{border-color:var(--accent)}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,var(--bg))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--bg))}
+.fb{font-size:.93rem;margin-top:.4rem;min-height:1.2em}
+.fb.ok{color:var(--good)} .fb.no{color:var(--bad)}
+.unlock{margin-top:.75rem}
+.btn{appearance:none;font:inherit;font-weight:700;border:0;border-radius:10px;padding:.65rem 1.1rem;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:400}
+.hint{color:var(--muted);font-size:.93rem}
+.congrats{margin-top:1.5rem;padding:1rem 1.25rem;border-radius:12px;background:var(--s4)}
+.congrats[hidden]{display:none}
+
+/* activity */
+.lab-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.timer{font-family:var(--mono);font-size:1.6rem;font-weight:600;min-width:5ch}
+.timer.over{color:var(--bad)}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.15rem;margin-top:.9rem}
+.step-top{display:flex;gap:.75rem;align-items:flex-start}
+.step-top input{margin-top:.35rem;width:1.15rem;height:1.15rem;accent-color:var(--accent);flex:none}
+.step.checked{opacity:.6}
+.time{color:var(--muted);font-size:.85rem;margin-left:auto;white-space:nowrap}
+pre{position:relative;background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:.85rem 1rem;margin:.6rem 0 .3rem;overflow-x:auto;font-family:var(--mono);font-size:.88rem;line-height:1.55}
+pre .c{color:#8FA59D}
+.copy{position:absolute;top:.4rem;right:.4rem;font:inherit;font-size:.75rem;background:#33433E;color:#DCE5E1;border:0;border-radius:6px;padding:.2rem .55rem;cursor:pointer}
+details{margin-top:.5rem}
+summary{cursor:pointer;color:var(--accent);font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+.tbl{overflow-x:auto;margin-top:.6rem}
+th,td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:400}
+.badge{display:inline-block;font-size:.78rem;font-weight:700;padding:.1rem .55rem;border-radius:999px;margin-left:.5rem;vertical-align:middle}
+.badge.easy{background:var(--s1);color:var(--ink)}
+.badge.hard{background:var(--s3);color:var(--ink)}
+.score{font-weight:700;font-size:1.1rem;padding:.35rem .8rem;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.score.full{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.lab-locked{margin-top:3rem;padding:1rem 1.25rem;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
+#labSection[hidden],.lab-locked[hidden]{display:none}
+.theme-toggle{position:fixed;top:calc(env(safe-area-inset-top,0px) + .8rem);right:.8rem;z-index:5}
+</style>
+</head>
+<body>
+<button class="btn ghost theme-toggle" id="themeBtn" aria-label="Toggle light or dark theme">◐</button>
+<main>
+  <h1>The IPv4 header</h1>
+  <p class="lead">20 bytes that get every packet across the internet. Tap each coloured field to learn it, pass the short quiz, and the next row unlocks.</p>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="diagram-wrap">
+    <div class="diagram">
+      <div class="ruler" id="ruler"></div>
+      <div class="grid" id="grid"></div>
+      <div class="legend"><span>Each row = 32 bits (4 bytes)</span><span>Rows 1–5 = 20-byte minimum header</span></div>
+    </div>
+  </div>
+
+  <div class="detail" id="detail" aria-live="polite">
+    <h3>Start with the blue row</h3>
+    <p class="hint">Tap Version, IHL, DSCP/ECN and Total Length. The quiz appears once you have opened all four.</p>
+  </div>
+
+  <section class="quiz" id="quiz" hidden aria-live="polite"></section>
+
+  <div class="congrats" id="congrats" hidden>
+    <h3>Header complete</h3>
+    <p>You know every field. Now build one yourself with Scapy below.</p>
+  </div>
+
+  <!-- ACTIVITY -->
+  <div class="lab-locked" id="labLocked">🔒 The 5-minute Scapy lab unlocks after you finish all four rows of the header.</div>
+  <section id="labSection" hidden>
+  <h2 id="lab">5-minute lab: build an IP packet with Scapy</h2>
+  <p class="hint">Tick each step when it works. Simple steps = 1 point, hard steps = 2 points.</p>
+  <div class="lab-head">
+    <p class="hint" style="margin:0">Needs Python + Scapy (<code>pip install scapy</code>). Sending packets needs root/admin; Windows also needs Npcap.</p>
+    <div style="display:flex;align-items:center;gap:.6rem">
+      <span class="score" id="score">0 / 8 pts</span>
+      <span class="timer" id="timer">5:00</span>
+      <button class="btn" id="timerBtn">Start timer</button>
+      <button class="btn ghost" id="timerReset">Reset</button>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-top"><input type="checkbox" aria-label="Done"><div><h3>Launch Scapy</h3></div><span class="time">30 s</span></div>
+    <pre><button class="copy">Copy</button>sudo scapy</pre>
+  </div>
+
+  <div class="step">
+    <div class="step-top"><input type="checkbox" aria-label="Done"><div><h3>Make an empty IP header and look at it</h3>
+      <p class="hint" style="margin:0">Fields showing <code>None</code> (ihl, len, chksum) are calculated when the packet is built.</p></div><span class="time">1 min</span></div>
+    <pre><button class="copy">Copy</button>pkt = IP()
+pkt.show()</pre>
+  </div>
+
+  <div class="step">
+    <div class="step-top"><input type="checkbox" aria-label="Done"><div><h3>Set the fields you learned</h3></div><span class="time">1 min</span></div>
+    <pre><button class="copy">Copy</button>pkt = IP(dst="8.8.8.8", ttl=10, id=1234, flags="DF", proto=1)
+pkt.show()</pre>
+    <details><summary>Scapy name for each header field</summary>
+      <div class="tbl"><table>
+        <tr><th>Header field</th><th>Scapy</th><th>Header field</th><th>Scapy</th></tr>
+        <tr><td>Version</td><td><code>version</code></td><td>Fragment Offset</td><td><code>frag</code></td></tr>
+        <tr><td>IHL</td><td><code>ihl</code></td><td>TTL</td><td><code>ttl</code></td></tr>
+        <tr><td>DSCP/ECN</td><td><code>tos</code></td><td>Protocol</td><td><code>proto</code></td></tr>
+        <tr><td>Total Length</td><td><code>len</code></td><td>Checksum</td><td><code>chksum</code></td></tr>
+        <tr><td>Identification</td><td><code>id</code></td><td>Source / Dest</td><td><code>src</code> / <code>dst</code></td></tr>
+        <tr><td>Flags</td><td><code>flags</code></td><td>Options</td><td><code>options</code></td></tr>
+      </table></div>
+    </details>
+  </div>
+
+  <div class="step">
+    <div class="step-top"><input type="checkbox" aria-label="Done"><div><h3>Build it and see the raw bytes</h3>
+      <p class="hint" style="margin:0">Scapy now fills in ihl, len and chksum. Look at the very first byte of the hexdump.</p></div><span class="time">1 min</span></div>
+    <pre><button class="copy">Copy</button>built = IP(raw(pkt))
+built.show()
+hexdump(pkt)</pre>
+    <details><summary>Why is the first byte 45?</summary>
+      <p style="margin:.4rem 0 0">4 = Version (IPv4), 5 = IHL (5 × 4 = 20-byte header). Two fields packed into one byte.</p>
+    </details>
+  </div>
+
+  <div class="step">
+    <div class="step-top"><input type="checkbox" aria-label="Done"><div><h3>Add ICMP on top and send it</h3>
+      <p class="hint" style="margin:0">The <code>/</code> stacks layers. <code>sr1</code> sends and waits for one reply.</p></div><span class="time">1 min</span></div>
+    <pre><button class="copy">Copy</button>reply = sr1(IP(dst="8.8.8.8")/ICMP(), timeout=2)
+reply.show()</pre>
+    <p class="hint" style="margin:.3rem 0 0">Check: reply <code>src</code> is 8.8.8.8, <code>proto</code> is 1 (ICMP), and its <code>ttl</code> is lower than it started.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-top"><input type="checkbox" aria-label="Done"><div><h3>Challenge: make the packet die at the first router</h3></div><span class="time">30 s</span></div>
+    <pre><button class="copy">Copy</button>r = sr1(IP(dst="8.8.8.8", ttl=1)/ICMP(), timeout=2)
+r.src, r[ICMP].type</pre>
+    <details><summary>What should you see?</summary>
+      <p style="margin:.4rem 0 0"><code>r.src</code> is your router's IP, and ICMP type <strong>11</strong> (Time Exceeded). TTL hit 0, so the router dropped the packet and told you. This is exactly how traceroute works.</p>
+    </details>
+  </div>
+  </section>
+</main>
+
+<script>
+const FIELDS = [
+  // stage 1
+  {id:"ver", name:"Version", bits:4, span:4, stage:1, scapy:"version",
+   desc:"Which IP version this packet uses.", key:"Always 4 for IPv4."},
+  {id:"ihl", name:"IHL", bits:4, span:4, stage:1, scapy:"ihl",
+   desc:"Internet Header Length: how long the header is, counted in 32-bit words (4 bytes each).", key:"Minimum 5 (= 20 bytes). Maximum 15 (= 60 bytes)."},
+  {id:"tos", name:"DSCP / ECN", bits:8, span:8, stage:1, scapy:"tos",
+   desc:"Formerly Type of Service. DSCP (6 bits) marks priority for QoS, e.g. voice traffic. ECN (2 bits) signals congestion without dropping packets.", key:"Usually 0 on normal traffic."},
+  {id:"len", name:"Total Length", bits:16, span:16, stage:1, scapy:"len",
+   desc:"Size of the whole packet in bytes: header plus data.", key:"Max 65,535 bytes. Minimum 20 (header only)."},
+  // stage 2
+  {id:"id", name:"Identification", bits:16, span:16, stage:2, scapy:"id",
+   desc:"A number the sender gives the packet. If the packet is fragmented, every fragment carries the same ID so the receiver can reassemble them.", key:"Same ID = pieces of the same original packet."},
+  {id:"flags", name:"Flags", bits:3, span:3, stage:2, scapy:"flags",
+   desc:"Three bits: Reserved (always 0), DF = Don't Fragment, MF = More Fragments.", key:"DF=1: drop instead of fragmenting. MF=1: more pieces follow."},
+  {id:"frag", name:"Fragment Offset", bits:13, span:13, stage:2, scapy:"frag",
+   desc:"Where this fragment's data belongs in the original packet.", key:"Measured in units of 8 bytes. First fragment = 0."},
+  // stage 3
+  {id:"ttl", name:"TTL", bits:8, span:8, stage:3, scapy:"ttl",
+   desc:"Time To Live: really a hop counter. Every router subtracts 1. At 0 the packet is dropped and an ICMP Time Exceeded is sent back.", key:"Stops packets looping forever. Defaults: Linux 64, Windows 128."},
+  {id:"proto", name:"Protocol", bits:8, span:8, stage:3, scapy:"proto",
+   desc:"What is carried inside the packet, so the receiver knows who to hand the data to.", key:"1 = ICMP, 6 = TCP, 17 = UDP."},
+  {id:"chk", name:"Header Checksum", bits:16, span:16, stage:3, scapy:"chksum",
+   desc:"Error check over the header only (not the data). Bad checksum = packet discarded.", key:"Recalculated at every router, because TTL changes."},
+  // stage 4
+  {id:"src", name:"Source Address", bits:32, span:32, stage:4, scapy:"src",
+   desc:"IPv4 address of the sender.", key:"32 bits, e.g. 192.168.1.10."},
+  {id:"dst", name:"Destination Address", bits:32, span:32, stage:4, scapy:"dst",
+   desc:"IPv4 address of the final receiver. Routers read this to choose the next hop.", key:"Stays the same end to end (unless NAT rewrites it)."},
+  {id:"opt", name:"Options + Padding", bits:"0–320", span:32, stage:4, scapy:"options",
+   desc:"Optional extras (rarely used). Padded with zeros so the header ends on a 32-bit boundary.", key:"0–40 bytes. If present, IHL is greater than 5."},
+];
+
+const QUIZZES = {
+  1: [
+    {q:"A header has no options. What is the IHL value?", o:["4","5","20","60"], a:1,
+     why:"IHL counts 4-byte words: 5 × 4 = 20 bytes."},
+    {q:"Total Length measures…", o:["Only the header","Only the data","Header + data","Number of hops"], a:2,
+     why:"It is the size of the entire packet in bytes."},
+  ],
+  2: [
+    {q:"A router must fragment a packet but DF = 1. What happens?", o:["It fragments anyway","It drops the packet","It sets MF = 1","It clears the DF bit"], a:1,
+     why:"Don't Fragment means drop it (and send ICMP back to the sender)."},
+    {q:"Fragment Offset is counted in units of…", o:["1 byte","4 bytes","8 bytes","32 bits"], a:2,
+     why:"13 bits × 8-byte units covers the full 65,535-byte range."},
+  ],
+  3: [
+    {q:"A packet leaves with TTL 3. How many routers can it pass before being dropped?", o:["2","3","4","Unlimited"], a:0,
+     why:"Router 1 → 2, router 2 → 1, router 3 → 0 and drops it. So it passes 2 routers."},
+    {q:"Protocol = 6 means the packet carries…", o:["ICMP","UDP","TCP","IPv6"], a:2,
+     why:"6 = TCP, 17 = UDP, 1 = ICMP."},
+    {q:"Why does every router recompute the checksum?", o:["The data changes","TTL changes","The source IP changes","It doesn't"], a:1,
+     why:"TTL is part of the header, so the checksum must be updated."},
+  ],
+  4: [
+    {q:"How big is an IPv4 address?", o:["16 bits","32 bits","64 bits","128 bits"], a:1,
+     why:"4 bytes, written as four numbers 0–255."},
+    {q:"What is the largest possible IPv4 header?", o:["20 bytes","40 bytes","60 bytes","65,535 bytes"], a:2,
+     why:"IHL max 15 × 4 = 60 bytes (20 fixed + 40 options)."},
+  ],
+};
+
+const STAGE_NAMES = {1:"Row 1",2:"Row 2",3:"Row 3",4:"Addresses",5:"Scapy lab"};
+let stage = 1;          // highest unlocked stage
+let quizPassed = {};    // stage -> bool
+const seen = new Set();
+
+// ruler
+const ruler = document.getElementById("ruler");
+for (let i=0;i<32;i++){ const s=document.createElement("span"); s.textContent=i; ruler.appendChild(s); }
+
+// grid
+const grid = document.getElementById("grid");
+FIELDS.forEach(f=>{
+  const b = document.createElement("button");
+  b.className = "f"; b.dataset.stage = f.stage; b.dataset.id = f.id;
+  b.style.gridColumn = `span ${f.span}`;
+  b.innerHTML = `<span>${f.name}</span><small>${f.bits} bits</small>`;
+  b.addEventListener("click",()=>openField(f,b));
+  grid.appendChild(b);
+});
+
+function render(){
+  document.querySelectorAll(".f").forEach(b=>{
+    const s = +b.dataset.stage;
+    const locked = s > stage;
+    b.classList.toggle("locked", locked);
+    b.classList.toggle("new", s === stage);
+    b.setAttribute("aria-disabled", locked);
+    b.title = locked ? "Pass the quiz to unlock" : "";
+  });
+  const p = document.getElementById("progress"); p.innerHTML="";
+  [1,2,3,4].forEach(s=>{
+    const el = document.createElement("span");
+    el.className = "pill" + (quizPassed[s] ? " done" : s===stage ? " on" : "");
+    el.textContent = (quizPassed[s] ? "✓ " : "") + STAGE_NAMES[s];
+    p.appendChild(el);
+  });
+}
+
+function openField(f,b){
+  if (f.stage > stage){
+    document.getElementById("detail").innerHTML = `<h3>Locked</h3><p class="hint">Finish the current quiz to unlock this row.</p>`;
+    return;
+  }
+  document.querySelectorAll(".f.active").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active","seen");
+  seen.add(f.id);
+  document.getElementById("detail").innerHTML = `
+    <h3>${f.name}</h3>
+    <div class="meta"><span>${f.bits} bits</span><span>Scapy: <code>${f.scapy}</code></span></div>
+    <p>${f.desc}</p>
+    <div class="key"><strong>Remember:</strong> ${f.key}</div>`;
+  checkQuizReady();
+}
+
+function checkQuizReady(){
+  if (quizPassed[stage] || stage > 4) return;
+  const need = FIELDS.filter(f=>f.stage===stage).every(f=>seen.has(f.id));
+  if (need) showQuiz(stage);
+}
+
+function showQuiz(s){
+  const box = document.getElementById("quiz");
+  if (box.dataset.stage == s && !box.hidden) return;
+  box.dataset.stage = s; box.hidden = false;
+  const qs = QUIZZES[s]; const correct = new Set();
+  box.innerHTML = `<h3>Quick check: ${STAGE_NAMES[s]}</h3><p class="hint">Answer all correctly to unlock the next part. You can retry.</p>`;
+  qs.forEach((q,qi)=>{
+    const wrap = document.createElement("div"); wrap.className="q";
+    wrap.innerHTML = `<div class="q-text">${qi+1}. ${q.q}</div><div class="opts"></div><div class="fb"></div>`;
+    const opts = wrap.querySelector(".opts"), fb = wrap.querySelector(".fb");
+    q.o.forEach((txt,oi)=>{
+      const o = document.createElement("button"); o.className="opt"; o.textContent=txt;
+      o.addEventListener("click",()=>{
+        if (correct.has(qi)) return;
+        opts.querySelectorAll(".opt").forEach(x=>x.classList.remove("wrong"));
+        if (oi===q.a){ o.classList.add("right"); fb.className="fb ok"; fb.textContent="Correct. "+q.why; correct.add(qi); }
+        else { o.classList.add("wrong"); fb.className="fb no"; fb.textContent="Not quite. Try another option."; }
+        btn.disabled = correct.size !== qs.length;
+      });
+      opts.appendChild(o);
+    });
+    box.appendChild(wrap);
+  });
+  const btn = document.createElement("button");
+  btn.className="btn unlock"; btn.disabled=true;
+  btn.textContent = s<4 ? `Unlock ${STAGE_NAMES[s+1]}` : "Finish header";
+  btn.addEventListener("click",()=>passStage(s));
+  box.appendChild(btn);
+  box.scrollIntoView({block:"nearest"});
+}
+
+function passStage(s){
+  quizPassed[s]=true;
+  document.getElementById("quiz").hidden = true;
+  if (s<4){
+    stage = s+1;
+    const names = FIELDS.filter(f=>f.stage===stage).map(f=>f.name).join(", ");
+    document.getElementById("detail").innerHTML = `<h3>${STAGE_NAMES[stage]} unlocked</h3><p class="hint">Tap: ${names}.</p>`;
+  } else {
+    stage = 5;
+    document.getElementById("detail").innerHTML = `<h3>All fields unlocked</h3><p class="hint">Tap any field to review it.</p>`;
+    document.getElementById("congrats").hidden = false;
+    document.getElementById("labLocked").hidden = true;
+    document.getElementById("labSection").hidden = false;
+    render();
+    document.getElementById("congrats").scrollIntoView({block:"start"});
+    return;
+  }
+  render();
+  document.querySelector(".diagram-wrap").scrollIntoView({block:"start"});
+}
+
+render();
+
+// copy buttons
+document.querySelectorAll(".copy").forEach(b=>{
+  b.addEventListener("click",async()=>{
+    const text = b.parentElement.textContent.replace(/^Copy(ed)?/,"").trim();
+    try{ await navigator.clipboard.writeText(text); b.textContent="Copied"; }
+    catch(e){ b.textContent="Select & copy"; }
+    setTimeout(()=>b.textContent="Copy",1500);
+  });
+});
+
+// checklist
+const POINTS = [1,1,1,2,1,2]; // launch, empty IP, set fields, build+hexdump (hard), send ICMP, TTL challenge (hard)
+const TOTAL = POINTS.reduce((a,b)=>a+b,0);
+const scoreEl = document.getElementById("score");
+function updateScore(){
+  let pts = 0;
+  document.querySelectorAll(".step").forEach((st,i)=>{ if (st.querySelector("input").checked) pts += POINTS[i]; });
+  scoreEl.textContent = `${pts} / ${TOTAL} pts`;
+  scoreEl.classList.toggle("full", pts===TOTAL);
+}
+document.querySelectorAll(".step").forEach((st,i)=>{
+  const p = POINTS[i], h3 = st.querySelector("h3");
+  const b = document.createElement("span");
+  b.className = "badge " + (p>1 ? "hard" : "easy");
+  b.textContent = (p>1 ? "Hard" : "Simple") + ` · ${p} pt${p>1?"s":""}`;
+  h3.appendChild(b);
+  const cb = st.querySelector("input");
+  cb.addEventListener("change",()=>{ st.classList.toggle("checked",cb.checked); updateScore(); });
+});
+updateScore();
+
+// timer
+let left=300, tick=null;
+const tEl=document.getElementById("timer"), tBtn=document.getElementById("timerBtn");
+const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+tBtn.addEventListener("click",()=>{
+  if (tick){ clearInterval(tick); tick=null; tBtn.textContent="Resume"; return; }
+  tBtn.textContent="Pause";
+  tick=setInterval(()=>{
+    left--; tEl.textContent = left>=0 ? fmt(left) : "Time!";
+    if (left<=0){ clearInterval(tick); tick=null; tEl.classList.add("over"); tBtn.textContent="Start timer"; }
+  },1000);
+});
+document.getElementById("timerReset").addEventListener("click",()=>{
+  clearInterval(tick); tick=null; left=300; tEl.textContent="5:00"; tEl.classList.remove("over"); tBtn.textContent="Start timer";
+});
+
+// theme
+document.getElementById("themeBtn").addEventListener("click",()=>{
+  const r=document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+});
+</script>
+</body>
+</html>
