@@ -1,0 +1,520 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ICMP Redirect Attack</title>
+<style>
+  /* Layout: single scrolling column, sticky section nav; packet-field tables and SVG diagrams carry the weight.
+     Palette: deep slate ground, signal-teal accent for "protocol", amber/red for "attack". */
+  :root{
+    --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef2f5;
+    --fg:#17202a; --muted:#5a6b78; --line:#d6dee4;
+    --accent:#0d8a86; --accent-soft:#d3ebea;
+    --danger:#c0392b; --danger-soft:#f6ddd8;
+    --warn:#b8791a; --warn-soft:#f6e9d2;
+    --good:#2f7d4f; --good-soft:#d8ecdf;
+    --ip:#2d6ca8; --ip-soft:#d8e6f2;
+    --code-bg:#11202b; --code-fg:#dfe9ef;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0e161c; --surface:#16222b; --surface-2:#1b2a34;
+    --fg:#e7eef3; --muted:#93a6b2; --line:#2a3b46;
+    --accent:#3fc5bf; --accent-soft:#113532;
+    --danger:#f06a5a; --danger-soft:#3a1f1b;
+    --warn:#e0a84a; --warn-soft:#352a16;
+    --good:#5fc688; --good-soft:#16301f;
+    --ip:#6aa9e0; --ip-soft:#162a3b;
+    --code-bg:#0a141a; --code-fg:#cfdbe3;
+    color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0e161c; --surface:#16222b; --surface-2:#1b2a34;
+    --fg:#e7eef3; --muted:#93a6b2; --line:#2a3b46;
+    --accent:#3fc5bf; --accent-soft:#113532;
+    --danger:#f06a5a; --danger-soft:#3a1f1b;
+    --warn:#e0a84a; --warn-soft:#352a16;
+    --good:#5fc688; --good-soft:#16301f;
+    --ip:#6aa9e0; --ip-soft:#162a3b;
+    --code-bg:#0a141a; --code-fg:#cfdbe3;
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.6;
+    font-size:15px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding-block:0 72px;padding-left:18px;padding-right:18px}
+
+  /* Header */
+  header.hero{padding-block:44px 24px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;margin:0 0 10px}
+  h1{font-size:clamp(30px,6vw,46px);line-height:1.05;margin:0;font-weight:600;letter-spacing:-.02em;
+    text-wrap:balance}
+  .lede{color:var(--muted);font-size:17px;margin:16px 0 0;max-width:62ch}
+
+  /* Sticky section nav */
+  nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);
+    border-bottom:1px solid var(--line);margin-top:4px}
+  .nav-inner{max-width:860px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;
+    padding:10px 14px;scrollbar-width:thin}
+  nav a{flex:0 0 auto;font-family:var(--mono);font-size:12.5px;text-decoration:none;color:var(--muted);
+    padding:6px 11px;border-radius:7px;white-space:nowrap;letter-spacing:.02em}
+  nav a:hover{color:var(--fg);background:var(--surface-2)}
+  nav a.active{color:var(--accent);background:var(--accent-soft)}
+
+  section{padding-block:40px;border-bottom:1px solid var(--line);scroll-margin-top:60px}
+  section:last-of-type{border-bottom:none}
+  h2{font-size:clamp(22px,4vw,28px);margin:0 0 6px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+  h2 .n{font-family:var(--mono);color:var(--accent);font-size:.7em;font-weight:600;margin-right:12px;
+    vertical-align:middle}
+  .sub{color:var(--muted);margin:0 0 22px;max-width:64ch}
+  h3{font-size:16px;margin:26px 0 8px;font-weight:600}
+  p{max-width:66ch}
+  strong{font-weight:600}
+  code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding:1px 6px;
+    border-radius:5px;border:1px solid var(--line)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:620px){.grid2{grid-template-columns:1fr}}
+
+  /* Packet / byte diagrams */
+  .diagram-scroll{overflow-x:auto;margin:14px 0;border-radius:12px}
+  svg{display:block;max-width:100%}
+  .svg-fill-surface{fill:var(--surface)}
+
+  /* Field legend chips */
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+  .chip{font-family:var(--mono);font-size:12px;display:inline-flex;align-items:center;gap:7px;
+    padding:4px 10px;border-radius:20px;border:1px solid var(--line);background:var(--surface)}
+  .chip .dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+
+  /* Types table */
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);font-weight:600}
+  td code{background:none;border:none;padding:0;color:var(--accent)}
+  tr.hl td{background:var(--accent-soft)}
+  tr.hl td:first-child code{color:var(--fg);font-weight:600}
+  .tbl-scroll{overflow-x:auto}
+
+  /* Code block */
+  pre{background:var(--code-bg);color:var(--code-fg);font-family:var(--mono);font-size:13px;
+    line-height:1.65;padding:18px 20px;border-radius:12px;overflow-x:auto;margin:14px 0;
+    border:1px solid var(--line)}
+  pre .c{color:#7f93a0}        /* comment */
+  pre .k{color:var(--accent)}  /* keyword/func */
+  pre .s{color:#e0a84a}        /* string/value */
+  pre .at{color:var(--danger)} /* attack-relevant */
+
+  /* Callouts */
+  .note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 18px;
+    border-radius:0 10px 10px 0;margin:18px 0;font-size:14.5px}
+  .note.danger{border-color:var(--danger);background:var(--danger-soft)}
+  .note.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .note .lab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    font-weight:600;display:block;margin-bottom:5px}
+  .note.warn .lab{color:var(--warn)} .note.danger .lab{color:var(--danger)} .note .lab{color:var(--accent)}
+
+  /* Attack stepper */
+  .steps{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 18px}
+  .steps button{font-family:var(--mono);font-size:12.5px;padding:7px 13px;border-radius:8px;
+    border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;
+    transition:all .15s}
+  .steps button:hover{color:var(--fg)}
+  .steps button[aria-current="true"]{background:var(--danger);border-color:var(--danger);color:#fff}
+  .step-body{min-height:76px}
+  .step-body p{margin:0}
+  .step-title{font-weight:600;margin-bottom:4px!important;display:flex;align-items:center;gap:10px}
+  .step-title .tag{font-family:var(--mono);font-size:11px;background:var(--danger-soft);
+    color:var(--danger);padding:2px 8px;border-radius:6px;font-weight:600}
+
+  ul.clean{margin:10px 0;padding-left:20px}
+  ul.clean li{margin:7px 0;max-width:64ch}
+  .foot{color:var(--muted);font-size:12.5px;font-family:var(--mono);padding-top:30px;text-align:center}
+
+  .theme-btn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:14px;z-index:40;
+    width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--surface);
+    color:var(--fg);cursor:pointer;font-size:15px;display:grid;place-items:center}
+</style>
+
+<button class="theme-btn" id="themeBtn" aria-label="Toggle theme">◐</button>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Internet Security · SEED Lab</p>
+    <h1>ICMP &amp; the Redirect Attack</h1>
+    <p class="lede">How routers use ICMP to correct each other's routing — and how an attacker forges that
+      same message to quietly become a man-in-the-middle on the victim's traffic.</p>
+  </header>
+</div>
+
+<nav>
+  <div class="nav-inner" id="navInner">
+    <a href="#what">What is ICMP</a>
+    <a href="#header">The header</a>
+    <a href="#types">Message types</a>
+    <a href="#redirect">Redirect message</a>
+    <a href="#attack">The attack</a>
+    <a href="#why">Why it works</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- 1. WHAT -->
+  <section id="what">
+    <h2><span class="n">01</span>What ICMP is for</h2>
+    <p class="sub">IP moves packets but never reports back. ICMP is the thin control layer that lets
+      routers and hosts send each other diagnostics and error notices about that delivery.</p>
+
+    <p><strong>ICMP (Internet Control Message Protocol)</strong> rides <em>inside</em> IP, as
+      protocol number <code>1</code>. It carries no user data of its own — only control signals:
+      "that host is unreachable," "your packet's time ran out," "are you alive?" (ping), and the one
+      this lab abuses, "you should send this to a different router."</p>
+
+    <div class="diagram-scroll">
+      <svg viewBox="0 0 760 120" role="img" aria-label="ICMP message nested inside an IP packet">
+        <rect x="2" y="24" width="756" height="72" rx="10" fill="var(--ip-soft)" stroke="var(--ip)" stroke-width="1.5"/>
+        <text x="18" y="18" font-family="var(--mono)" font-size="12" fill="var(--ip)" font-weight="600">IP PACKET</text>
+        <rect x="18" y="40" width="150" height="40" rx="7" fill="var(--surface)" stroke="var(--ip)" stroke-width="1.2"/>
+        <text x="93" y="64" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--ip)">IP header</text>
+        <rect x="182" y="40" width="560" height="40" rx="7" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="200" y="35" font-family="var(--mono)" font-size="11.5" fill="var(--accent)" font-weight="600">IP payload = ICMP message</text>
+        <text x="462" y="64" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--accent)">Type · Code · Checksum · Rest-of-header + data</text>
+      </svg>
+    </div>
+
+    <p>Because ICMP lives in the IP payload, the <code>Protocol</code> field of the outer IP header is
+      set to <code>1</code> so the receiver knows to hand the payload to its ICMP handler rather than to
+      TCP or UDP.</p>
+  </section>
+
+  <!-- 2. HEADER -->
+  <section id="header">
+    <h2><span class="n">02</span>Anatomy of the header</h2>
+    <p class="sub">Every ICMP message opens with the same 8 bytes. The first three fields are fixed; the
+      fourth — "rest of header" — changes meaning depending on the Type.</p>
+
+    <div class="legend">
+      <span class="chip"><span class="dot" style="background:var(--accent)"></span>Type · 1 byte</span>
+      <span class="chip"><span class="dot" style="background:var(--good)"></span>Code · 1 byte</span>
+      <span class="chip"><span class="dot" style="background:var(--warn)"></span>Checksum · 2 bytes</span>
+      <span class="chip"><span class="dot" style="background:var(--ip)"></span>Rest of header · 4 bytes</span>
+    </div>
+
+    <div class="diagram-scroll">
+      <svg viewBox="0 0 740 232" role="img" aria-label="ICMP header byte layout, 32 bits per row">
+        <!-- bit ruler -->
+        <g font-family="var(--mono)" font-size="10.5" fill="var(--muted)">
+          <text x="30" y="20">0</text><text x="190" y="20">8</text>
+          <text x="350" y="20">16</text><text x="510" y="20">24</text><text x="686" y="20">31</text>
+        </g>
+        <text x="30" y="38" font-family="var(--mono)" font-size="11" fill="var(--muted)">bit →</text>
+
+        <!-- row 1 -->
+        <g transform="translate(30,46)">
+          <rect x="0" y="0" width="160" height="48" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.4"/>
+          <text x="80" y="22" text-anchor="middle" font-family="var(--mono)" font-size="13" fill="var(--accent)" font-weight="600">Type</text>
+          <text x="80" y="38" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--muted)">8 bits</text>
+
+          <rect x="160" y="0" width="160" height="48" rx="6" fill="var(--good-soft)" stroke="var(--good)" stroke-width="1.4"/>
+          <text x="240" y="22" text-anchor="middle" font-family="var(--mono)" font-size="13" fill="var(--good)" font-weight="600">Code</text>
+          <text x="240" y="38" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--muted)">8 bits</text>
+
+          <rect x="320" y="0" width="320" height="48" rx="6" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.4"/>
+          <text x="480" y="22" text-anchor="middle" font-family="var(--mono)" font-size="13" fill="var(--warn)" font-weight="600">Checksum</text>
+          <text x="480" y="38" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--muted)">16 bits</text>
+        </g>
+
+        <!-- row 2 -->
+        <g transform="translate(30,104)">
+          <rect x="0" y="0" width="640" height="48" rx="6" fill="var(--ip-soft)" stroke="var(--ip)" stroke-width="1.4"/>
+          <text x="320" y="22" text-anchor="middle" font-family="var(--mono)" font-size="13" fill="var(--ip)" font-weight="600">Rest of Header</text>
+          <text x="320" y="38" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--muted)">32 bits — meaning depends on Type (e.g. Gateway Address for a redirect)</text>
+        </g>
+
+        <!-- row 3 -->
+        <g transform="translate(30,162)">
+          <rect x="0" y="0" width="640" height="48" rx="6" fill="var(--surface-2)" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="5 4"/>
+          <text x="320" y="22" text-anchor="middle" font-family="var(--mono)" font-size="13" fill="var(--fg)" font-weight="600">Data section</text>
+          <text x="320" y="38" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--muted)">for errors: the IP header + first 8 bytes of the packet that caused the message</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3 style="margin-top:0">Type &amp; Code</h3>
+        <p style="margin:0;font-size:14px;color:var(--muted)"><strong style="color:var(--fg)">Type</strong>
+          names the message category (e.g. 8 = echo request). <strong style="color:var(--fg)">Code</strong>
+          is a sub-reason within that type. Together they tell the receiver exactly what happened.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">The data section matters</h3>
+        <p style="margin:0;font-size:14px;color:var(--muted)">Error messages echo back the <strong
+          style="color:var(--fg)">IP header + 8 bytes</strong> of the offending packet. That quoted
+          packet is how the sender — and any security check — knows which flow the message refers to.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. TYPES -->
+  <section id="types">
+    <h2><span class="n">03</span>Common message types</h2>
+    <p class="sub">A handful of types cover almost everything you'll see. Redirect — Type 5 — is the one
+      with the Gateway Address field in its "rest of header."</p>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Type</th><th>Name</th><th>What it says</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>Echo Reply</td><td>Response to a ping</td></tr>
+          <tr><td><code>3</code></td><td>Destination Unreachable</td><td>Can't deliver (code says why: host, port, network…)</td></tr>
+          <tr class="hl"><td><code>5</code></td><td>Redirect</td><td>Use a different router for this destination — carries a Gateway Address</td></tr>
+          <tr><td><code>8</code></td><td>Echo Request</td><td>The ping itself: "are you there?"</td></tr>
+          <tr><td><code>11</code></td><td>Time Exceeded</td><td>TTL hit 0 — the basis of <code>traceroute</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note">
+      <span class="lab">Redirect codes</span>
+      For Type 5, the Code narrows it down: <code>0</code> redirect for the network, <code>1</code> for the
+      host, <code>2</code> for ToS+network, <code>3</code> for ToS+host. The lab uses a host redirect.
+    </div>
+  </section>
+
+  <!-- 4. REDIRECT MESSAGE -->
+  <section id="redirect">
+    <h2><span class="n">04</span>Inside a Redirect packet</h2>
+    <p class="sub">A legitimate redirect comes from a router. Its "rest of header" is a
+      <strong>Gateway Address</strong> — the better router to use — and its data section quotes the
+      packet that triggered it.</p>
+
+    <div class="diagram-scroll">
+      <svg viewBox="0 0 740 196" role="img" aria-label="Redirect packet structure">
+        <text x="30" y="18" font-family="var(--mono)" font-size="11.5" fill="var(--accent)" font-weight="600">TYPE 5 — REDIRECT</text>
+        <g transform="translate(30,28)">
+          <rect x="0" y="0" width="120" height="44" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.3"/>
+          <text x="60" y="20" text-anchor="middle" font-family="var(--mono)" font-size="12" fill="var(--accent)" font-weight="600">Type = 5</text>
+          <text x="60" y="35" text-anchor="middle" font-family="var(--mono)" font-size="9.5" fill="var(--muted)">redirect</text>
+
+          <rect x="124" y="0" width="120" height="44" rx="6" fill="var(--good-soft)" stroke="var(--good)" stroke-width="1.3"/>
+          <text x="184" y="20" text-anchor="middle" font-family="var(--mono)" font-size="12" fill="var(--good)" font-weight="600">Code = 1</text>
+          <text x="184" y="35" text-anchor="middle" font-family="var(--mono)" font-size="9.5" fill="var(--muted)">host</text>
+
+          <rect x="248" y="0" width="140" height="44" rx="6" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.3"/>
+          <text x="318" y="25" text-anchor="middle" font-family="var(--mono)" font-size="12" fill="var(--warn)" font-weight="600">Checksum</text>
+        </g>
+        <g transform="translate(30,80)">
+          <rect x="0" y="0" width="358" height="44" rx="6" fill="var(--danger-soft)" stroke="var(--danger)" stroke-width="1.6"/>
+          <text x="179" y="20" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--danger)" font-weight="600">Gateway Address</text>
+          <text x="179" y="36" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--muted)">"use this router instead" — the attacker sets this to 10.9.0.111</text>
+        </g>
+        <g transform="translate(30,132)">
+          <rect x="0" y="0" width="358" height="44" rx="6" fill="var(--ip-soft)" stroke="var(--ip)" stroke-width="1.3" stroke-dasharray="5 4"/>
+          <text x="179" y="20" text-anchor="middle" font-family="var(--mono)" font-size="12" fill="var(--ip)" font-weight="600">Original IP header + 8 bytes</text>
+          <text x="179" y="36" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--muted)">the packet the victim sent to 192.168.60.5</text>
+        </g>
+        <!-- brace -->
+        <text x="410" y="105" font-family="var(--mono)" font-size="11" fill="var(--muted)">⟵ rest of header</text>
+        <text x="410" y="157" font-family="var(--mono)" font-size="11" fill="var(--muted)">⟵ data section</text>
+      </svg>
+    </div>
+
+    <p>The forgery mirrors this exactly. In Scapy the attacker builds a packet whose <em>outer</em> IP
+      claims to be from the real router, whose ICMP layer is the redirect pointing at the malicious
+      router, and whose embedded <code>ip2</code> is a copy of the packet the victim really sent:</p>
+
+<pre><span class="c">#!/usr/bin/python3</span>
+<span class="k">from</span> scapy.all <span class="k">import</span> *
+
+<span class="c"># Outer IP: pretend to be the real router (10.9.0.11)</span>
+ip   = <span class="k">IP</span>(src=<span class="s">'10.9.0.11'</span>, dst=<span class="s">'10.9.0.5'</span>)       <span class="c"># dst = the victim</span>
+icmp = <span class="k">ICMP</span>(type=<span class="at">5</span>, code=<span class="at">1</span>)                    <span class="c"># redirect, host</span>
+icmp.gw = <span class="at">'10.9.0.111'</span>                          <span class="c"># ← malicious router</span>
+
+<span class="c"># Embedded packet that "triggered" the redirect</span>
+ip2  = <span class="k">IP</span>(src=<span class="s">'10.9.0.5'</span>, dst=<span class="s">'192.168.60.5'</span>)   <span class="c"># victim → target</span>
+
+send(ip/icmp/ip2/<span class="k">ICMP</span>())</pre>
+
+    <div class="note warn">
+      <span class="lab">Routing cache, not routing table</span>
+      A redirect never edits the routing <em>table</em>. It writes a temporary entry into the routing
+      <em>cache</em>, which overrides the table until it expires. Check it with
+      <code>ip route show cache</code> and clear it with <code>ip route flush cache</code>.
+    </div>
+  </section>
+
+  <!-- 5. THE ATTACK -->
+  <section id="attack">
+    <h2><span class="n">05</span>The attack, step by step</h2>
+    <p class="sub">Goal: when the victim (10.9.0.5) sends to 192.168.60.5, make it route through the
+      attacker-controlled router (10.9.0.111) instead of the real one (10.9.0.11).</p>
+
+    <!-- Topology diagram -->
+    <div class="diagram-scroll card" style="padding:16px">
+      <svg viewBox="0 0 700 300" role="img" aria-label="Lab topology with victim, attacker, malicious router, real router and target">
+        <!-- network rails -->
+        <line x1="40" y1="70" x2="660" y2="70" stroke="var(--line)" stroke-width="2"/>
+        <text x="46" y="60" font-family="var(--mono)" font-size="11" fill="var(--muted)">10.9.0.0/24</text>
+        <line x1="300" y1="238" x2="660" y2="238" stroke="var(--line)" stroke-width="2"/>
+        <text x="306" y="228" font-family="var(--mono)" font-size="11" fill="var(--muted)">192.168.60.0/24</text>
+
+        <!-- nodes top -->
+        <g font-family="var(--mono)" font-size="11">
+          <!-- victim -->
+          <line x1="110" y1="70" x2="110" y2="100" stroke="var(--line)" stroke-width="1.5"/>
+          <rect x="60" y="100" width="100" height="46" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.6"/>
+          <text x="110" y="120" text-anchor="middle" fill="var(--fg)" font-weight="600" font-size="12">Victim</text>
+          <text x="110" y="136" text-anchor="middle" fill="var(--muted)">10.9.0.5</text>
+          <!-- attacker -->
+          <line x1="250" y1="70" x2="250" y2="100" stroke="var(--line)" stroke-width="1.5"/>
+          <rect x="200" y="100" width="100" height="46" rx="8" fill="var(--danger-soft)" stroke="var(--danger)" stroke-width="1.6"/>
+          <text x="250" y="120" text-anchor="middle" fill="var(--fg)" font-weight="600" font-size="12">Attacker</text>
+          <text x="250" y="136" text-anchor="middle" fill="var(--muted)">10.9.0.105</text>
+          <!-- malicious router -->
+          <line x1="420" y1="70" x2="420" y2="100" stroke="var(--line)" stroke-width="1.5"/>
+          <rect x="358" y="100" width="124" height="46" rx="8" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.6"/>
+          <text x="420" y="120" text-anchor="middle" fill="var(--fg)" font-weight="600" font-size="12">Malicious Router</text>
+          <text x="420" y="136" text-anchor="middle" fill="var(--muted)">10.9.0.111</text>
+          <!-- real router -->
+          <line x1="590" y1="70" x2="590" y2="100" stroke="var(--line)" stroke-width="1.5"/>
+          <rect x="540" y="100" width="110" height="46" rx="8" fill="var(--surface)" stroke="var(--ip)" stroke-width="1.6"/>
+          <text x="595" y="120" text-anchor="middle" fill="var(--fg)" font-weight="600" font-size="12">Real Router</text>
+          <text x="595" y="136" text-anchor="middle" fill="var(--muted)">10.9.0.11</text>
+        </g>
+
+        <!-- routers bridge to bottom net -->
+        <line x1="420" y1="146" x2="420" y2="238" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <line x1="595" y1="146" x2="595" y2="238" stroke="var(--ip)" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+        <!-- target -->
+        <g font-family="var(--mono)" font-size="11">
+          <line x1="500" y1="238" x2="500" y2="262" stroke="var(--line)" stroke-width="1.5"/>
+          <rect x="440" y="262" width="120" height="34" rx="8" fill="var(--good-soft)" stroke="var(--good)" stroke-width="1.6"/>
+          <text x="500" y="283" text-anchor="middle" fill="var(--fg)" font-weight="600" font-size="12">Target 192.168.60.5</text>
+        </g>
+
+        <!-- flows (shown by stepper) -->
+        <g id="flowForged" opacity="0">
+          <path d="M250 100 Q180 40 115 100" fill="none" stroke="var(--danger)" stroke-width="2.4" marker-end="url(#ar-d)"/>
+          <text x="150" y="36" font-family="var(--mono)" font-size="10.5" fill="var(--danger)" font-weight="600">forged redirect</text>
+        </g>
+        <g id="flowGood" opacity="0">
+          <path d="M160 128 Q360 190 545 128" fill="none" stroke="var(--ip)" stroke-width="2.4" stroke-dasharray="6 5" marker-end="url(#ar-i)"/>
+          <text x="330" y="182" font-family="var(--mono)" font-size="10.5" fill="var(--ip)" font-weight="600">before: via real router</text>
+        </g>
+        <g id="flowBad" opacity="0">
+          <path d="M160 123 Q290 150 362 128" fill="none" stroke="var(--warn)" stroke-width="2.6" marker-end="url(#ar-w)"/>
+          <text x="210" y="168" font-family="var(--mono)" font-size="10.5" fill="var(--warn)" font-weight="600">after: via malicious router</text>
+        </g>
+
+        <defs>
+          <marker id="ar-d" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9z" fill="var(--danger)"/></marker>
+          <marker id="ar-i" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9z" fill="var(--ip)"/></marker>
+          <marker id="ar-w" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9z" fill="var(--warn)"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="steps" role="tablist" id="stepBtns">
+      <button aria-current="true" data-step="0">0 · Setup</button>
+      <button data-step="1">1 · Before</button>
+      <button data-step="2">2 · Forge</button>
+      <button data-step="3">3 · After</button>
+      <button data-step="4">4 · Verify</button>
+    </div>
+    <div class="card step-body" id="stepBody"></div>
+  </section>
+
+  <!-- 6. WHY -->
+  <section id="why">
+    <h2><span class="n">06</span>Why it works — and the catches</h2>
+    <p class="sub">ICMP has no authentication. A redirect is trusted simply because it arrives. But the
+      kernel does one sanity check, and the lab's questions probe its limits.</p>
+
+    <ul class="clean">
+      <li><strong>No authentication.</strong> Nothing in ICMP proves the sender really is a router, so a
+        spoofed source IP is enough to be believed.</li>
+      <li><strong>The sanity check.</strong> The kernel only accepts a redirect if the embedded
+        <code>ip2</code> matches a packet the victim actually sent (right type and destination). So the
+        victim must have real traffic to 192.168.60.5 in flight — otherwise the redirect is ignored.</li>
+      <li><strong>Countermeasure.</strong> Ubuntu normally drops redirects
+        (<code>accept_redirects=0</code>); the lab turns it on to make the attack possible.</li>
+      <li><strong>Gateway must be on the LAN.</strong> A redirect can only point to a router on the same
+        local network — pointing it at a remote or non-existent host fails (Lab Q1 &amp; Q2).</li>
+    </ul>
+
+    <div class="note danger">
+      <span class="lab">From redirect to MITM — Task 2</span>
+      Once traffic flows through 10.9.0.111, disable its IP forwarding
+      (<code>sysctl net.ipv4.ip_forward=0</code>) and run a sniff-and-spoof program. Capturing only the
+      victim→target direction, it rewrites the payload (e.g. replacing your name with
+      <code>A</code>'s of equal length to keep TCP sequence numbers intact) and re-sends it.
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // Theme toggle
+  (function(){
+    var btn=document.getElementById('themeBtn'),root=document.documentElement;
+    btn.addEventListener('click',function(){
+      var cur=root.getAttribute('data-theme');
+      var dark=cur? cur==='dark' : matchMedia('(prefers-color-scheme:dark)').matches;
+      root.setAttribute('data-theme',dark?'light':'dark');
+    });
+  })();
+
+  // Scroll-spy nav
+  (function(){
+    var links=[].slice.call(document.querySelectorAll('nav a'));
+    var map={}; links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(l){l.classList.remove('active');});
+          var a=map[e.target.id]; if(a){a.classList.add('active');
+            a.scrollIntoView({inline:'center',block:'nearest'});}
+        }
+      });
+    },{rootMargin:'-45% 0px -50% 0px'});
+    document.querySelectorAll('section').forEach(function(s){obs.observe(s);});
+  })();
+
+  // Attack stepper
+  (function(){
+    var steps=[
+      {t:'Setup',tag:'before',
+       d:"The victim's routing table sends 192.168.60.0/24 traffic through the real router 10.9.0.11. The attacker sits on the same LAN and controls the malicious router 10.9.0.111.",
+       show:[]},
+      {t:'Normal routing',tag:'baseline',
+       d:"The victim pings 192.168.60.5. Packets correctly leave via the real router — this real traffic is what the attacker will reference to pass the kernel's sanity check.",
+       show:['flowGood']},
+      {t:'Forge the redirect',tag:'spoof',
+       d:"The attacker (10.9.0.105) sends a spoofed ICMP redirect: source set to the real router 10.9.0.11, gateway set to 10.9.0.111, embedding a copy of the victim's real packet to 192.168.60.5.",
+       show:['flowForged']},
+      {t:'Routing diverted',tag:'poisoned',
+       d:"The victim's kernel accepts the redirect and writes a cache entry: 192.168.60.5 via 10.9.0.111. New packets to that target now flow through the attacker's router.",
+       show:['flowBad']},
+      {t:'Verify',tag:'confirm',
+       d:"On the victim: `ip route show cache` shows 192.168.60.5 via 10.9.0.111 (expires ~300s). `mtr -n 192.168.60.5` shows the path now hops through 10.9.0.111.",
+       show:['flowBad']},
+    ];
+    var body=document.getElementById('stepBody'),
+        btns=[].slice.call(document.querySelectorAll('#stepBtns button')),
+        flows=['flowForged','flowGood','flowBad'];
+    function render(i){
+      var s=steps[i];
+      body.innerHTML='<p class="step-title"><span class="tag">'+s.tag+'</span>'+s.t+'</p><p>'+
+        s.d.replace(/`([^`]+)`/g,'<code>$1</code>')+'</p>';
+      flows.forEach(function(f){document.getElementById(f).setAttribute('opacity', s.show.indexOf(f)>-1?'1':'0');});
+      btns.forEach(function(b,bi){b.setAttribute('aria-current', bi===i?'true':'false');});
+    }
+    btns.forEach(function(b){b.addEventListener('click',function(){render(+b.dataset.step);});});
+    render(0);
+  })();
+</script>
+</body></html>
