@@ -1,0 +1,659 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>TCP SEQ & ACK Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* Layout: a lab handout. Four units in order (rules → worked examples → practice → flags), each built around the same two-host ladder diagram. */
+:root{
+  --bg:#f2f4f8; --surface:#ffffff; --sunk:#e8ecf2; --ink:#16202c; --muted:#566273; --line:#d3dae4;
+  --a:#5b37d4; --a-soft:#ece6ff; --b:#d9620c; --b-soft:#ffeedd;
+  --ok:#1d8048; --ok-soft:#e1f4e8; --bad:#c2302a; --bad-soft:#fde6e4; --hl:#ffe45c;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e131a; --surface:#161d27; --sunk:#1e2733; --ink:#e7ecf2; --muted:#9aa6b5; --line:#2b3644;
+  --a:#a48dff; --a-soft:#2a2350; --b:#ff9d52; --b-soft:#3d2614;
+  --ok:#52c886; --ok-soft:#173826; --bad:#ff6f66; --bad-soft:#41201e; --hl:#8a7400; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e131a; --surface:#161d27; --sunk:#1e2733; --ink:#e7ecf2; --muted:#9aa6b5; --line:#2b3644;
+  --a:#a48dff; --a-soft:#2a2350; --b:#ff9d52; --b-soft:#3d2614;
+  --ok:#52c886; --ok-soft:#173826; --bad:#ff6f66; --bad-soft:#41201e; --hl:#8a7400; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:17px/1.55 var(--f-body)}
+.wrap{max-width:1000px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:0 64px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.1;margin:0}
+h1{font-size:clamp(2.1rem,6vw,3.4rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.5rem,3.6vw,2.1rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0;max-width:65ch}
+code,.mono{font-family:var(--f-mono);font-size:.9em}
+.A{color:var(--a)} .B{color:var(--b)}
+.eyebrow{font:600 .78rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* header + nav */
+header.hero{padding-block:40px 24px;display:grid;gap:14px}
+.hero p{color:var(--muted);font-size:1.1rem}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav.units{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-bottom:8px}
+nav.units .in{display:flex;gap:4px;overflow-x:auto;padding-block:8px;max-width:1000px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+nav.units a{flex:none;text-decoration:none;color:var(--muted);font:600 .92rem/1 var(--f-body);padding:9px 12px;border-radius:8px}
+nav.units a b{font-family:var(--f-mono);color:var(--ink);margin-right:6px}
+nav.units a:hover,nav.units a:focus-visible{background:var(--sunk);color:var(--ink)}
+
+section.unit{padding-block:40px 8px;display:grid;gap:22px;scroll-margin-top:60px}
+.unit-head{display:grid;gap:8px}
+.unit-head p{color:var(--muted)}
+.unit-head p.keyidea{color:var(--ink);font:800 clamp(1.5rem,4.2vw,2.2rem)/1.15 var(--f-display);letter-spacing:-.01em;border-left:6px solid var(--a);background:var(--a-soft);padding:14px 18px;border-radius:0 12px 12px 0;max-width:none}
+.keyidea mark{background:var(--hl);color:var(--ink);padding:0 6px;border-radius:6px}
+
+/* rules */
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.rule{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:10px;align-content:start}
+.formula{font-family:var(--f-mono);font-weight:600;background:var(--sunk);padding:10px 12px;border-radius:8px;font-size:.95rem;overflow-x:auto}
+.rule p{font-size:.98rem}
+
+/* byte ruler */
+.ruler-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px}
+.ruler{display:grid;grid-template-columns:2fr 2fr 1.3fr;gap:3px;font-family:var(--f-mono);font-size:.8rem}
+.seg{border-radius:6px;padding:10px 8px;display:grid;gap:2px;min-width:0}
+.seg.s1{background:var(--a-soft);border:1.5px solid var(--a)}
+.seg.s2{background:var(--a-soft);border:1.5px dashed var(--a)}
+.seg.s3{background:var(--sunk);border:1.5px dashed var(--line);color:var(--muted)}
+.seg strong{font-weight:700}
+.ruler-note{color:var(--muted);font-size:.95rem}
+
+/* ladder */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:16px;min-width:0}
+.card-top{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:baseline;justify-content:space-between}
+.card-top p{color:var(--muted);font-size:.98rem}
+.ladder{--col:72px;--half:36px;display:grid;min-width:0}
+.ladder .hosts,.ladder .row{display:grid;grid-template-columns:var(--col) minmax(0,1fr) var(--col)}
+.host{display:grid;justify-items:center;gap:4px;font:700 .85rem/1 var(--f-body);padding-bottom:6px}
+.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font:800 1.15rem/1 var(--f-display);color:var(--surface)}
+.host.hA .avatar{background:var(--a)} .host.hB .avatar{background:var(--b)}
+.row .tl{background:linear-gradient(var(--line),var(--line)) center/2px 100% no-repeat}
+.lane{margin-inline:calc(var(--half) * -1);padding-block:12px 10px;display:grid;gap:6px;min-width:0;transition:opacity .25s}
+.lbl{padding-inline:calc(var(--half) + 8px);font-family:var(--f-mono);font-size:.9rem;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0}
+.row.ba .lbl{justify-content:flex-end}
+.num{font:700 .72rem/1 var(--f-mono);border:1px solid var(--line);border-radius:4px;padding:3px 6px;color:var(--muted);background:var(--sunk)}
+.bytes{color:var(--muted);font-weight:400}
+.flag{font:700 .72rem/1 var(--f-mono);padding:3px 6px;border-radius:4px;background:var(--ink);color:var(--surface);letter-spacing:.04em}
+.arrow{height:2px;position:relative;margin-inline:3px}
+.row.ab .arrow{background:var(--a)} .row.ba .arrow{background:var(--b)}
+.arrow::after{content:"";position:absolute;top:-6px;border-block:7px solid transparent}
+.row.ab .arrow::after{right:-2px;border-left:11px solid var(--a)}
+.row.ba .arrow::after{left:-2px;border-right:11px solid var(--b)}
+.row.future .lane{opacity:.13}
+.row.current .lbl{background:linear-gradient(transparent 0, transparent 0)}
+.row.current .num{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.v{padding:1px 4px;border-radius:4px}
+.v.just{background:var(--hl);color:var(--ink)}
+.dash{color:var(--muted);font-weight:400}
+
+.blank{font:600 .9rem var(--f-mono);width:7.2ch;padding:4px 6px;border-radius:6px;border:1.5px solid var(--line);background:var(--hl);color:var(--ink);text-align:center}
+.blank:focus{outline:2px solid var(--a);outline-offset:1px}
+.blank.ok{background:var(--ok-soft);border-color:var(--ok)}
+.blank.bad{background:var(--bad-soft);border-color:var(--bad)}
+.blank:not(:placeholder-shown){background:var(--surface)}
+.blank.ok:not(:placeholder-shown){background:var(--ok-soft)}
+.blank.bad:not(:placeholder-shown){background:var(--bad-soft)}
+
+/* stepper panel */
+.explain{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start}
+.explain .text{display:grid;gap:8px;min-width:0}
+.calc{font-family:var(--f-mono);font-size:.88rem;background:var(--sunk);border-radius:8px;padding:10px 12px;display:grid;gap:6px}
+.calc div{min-width:0;overflow-wrap:anywhere}
+.calc b{font-weight:700}
+.states{display:grid;grid-template-columns:repeat(2,auto);gap:8px}
+.st{border-radius:10px;padding:8px 10px;display:grid;gap:2px;min-width:118px}
+.st.A{background:var(--a-soft)} .st.B{background:var(--b-soft)}
+.st small{font:700 .68rem/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.st span{font:700 1.05rem/1.2 var(--f-mono);font-variant-numeric:tabular-nums}
+.st em{font-style:normal;font-size:.78rem;color:var(--muted)}
+@media (max-width:640px){.explain{grid-template-columns:1fr}.ladder{--col:46px;--half:23px}.lbl{font-size:.82rem}}
+
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:600 .95rem/1 var(--f-body);border-radius:8px;padding:10px 14px;cursor:pointer;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+button.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button:disabled{opacity:.4;cursor:default}
+.prog{font:600 .85rem/1 var(--f-mono);color:var(--muted);margin-left:auto}
+
+.feedback{display:grid;gap:6px;font-size:.96rem}
+.feedback:empty{display:none}
+.fb{padding:8px 12px;border-radius:8px;border-left:4px solid}
+.fb.ok{background:var(--ok-soft);border-color:var(--ok)}
+.fb.bad{background:var(--bad-soft);border-color:var(--bad)}
+.fb.info{background:var(--sunk);border-color:var(--muted)}
+.score{font:700 .9rem/1 var(--f-mono);padding:8px 12px;border-radius:999px;background:var(--sunk)}
+
+/* flags */
+.bitstrip{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;font-family:var(--f-mono)}
+.bitcell{border:1.5px solid var(--line);border-radius:8px;padding:8px 2px;text-align:center;display:grid;gap:3px;background:var(--surface);cursor:pointer;color:var(--ink)}
+.bitcell b{font-size:.85rem} .bitcell small{font-size:.66rem;color:var(--muted)}
+.bitcell[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.bitcell[aria-pressed="true"] small{color:var(--surface);opacity:.75}
+.flagdefs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.fdef{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:6px;align-content:start;transition:border-color .2s, box-shadow .2s}
+.fdef.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+.fdef .h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.fdef .h span{font:600 .78rem var(--f-mono);color:var(--muted)}
+.fdef p{font-size:.95rem}
+.fdef .use{font-size:.88rem;color:var(--muted)}
+.fdef.minor{background:var(--sunk)}
+.quiz{display:grid;gap:14px}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
+.qcard.solved{border-color:var(--ok)}
+.qtop{display:flex;gap:10px;align-items:baseline}
+.qtop .num{flex:none}
+.readout{display:flex;flex-wrap:wrap;gap:6px 14px;font:600 .88rem var(--f-mono);color:var(--muted);align-items:center}
+.readout b{color:var(--ink)}
+@media (max-width:520px){.bitcell small{display:none}}
+
+
+/* gating */
+.howto{color:var(--muted);font-size:1.05rem}
+.chunk{display:grid;gap:16px;scroll-margin-top:70px}
+.chunk.fresh{animation:rise .5s ease-out}
+@keyframes rise{from{transform:translateY(10px);opacity:.4}to{transform:none;opacity:1}}
+.check{background:var(--surface);border:1.5px dashed var(--muted);border-radius:12px;padding:16px;display:grid;gap:10px}
+.check.passed{border:1.5px solid var(--ok);background:var(--ok-soft)}
+.check .q{font-weight:600;max-width:65ch}
+.check .tag{font:700 .72rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.check.passed .tag{color:var(--ok)}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts button[aria-pressed="true"]{border-color:var(--ink)}
+.opts button.wrong{border-color:var(--bad);color:var(--bad);text-decoration:line-through}
+.opts button.right{border-color:var(--ok);background:var(--ok-soft)}
+.numin{font:600 1rem var(--f-mono);width:9ch;padding:8px 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+.locked{margin-top:28px;padding:18px;border-radius:12px;background:var(--sunk);color:var(--muted);font-weight:600;text-align:center;border:1.5px dashed var(--line)}
+.progress{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none;font:600 .8rem/1 var(--f-mono);color:var(--muted);padding-left:8px}
+.pbar{width:72px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:block}
+.pbar i{display:block;height:100%;width:0;background:var(--ok);transition:width .4s}
+nav.units a.off{opacity:.35;pointer-events:none}
+.done-card{background:var(--ok-soft);border:1.5px solid var(--ok);border-radius:14px;padding:22px;display:grid;gap:8px}
+footer{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+footer{margin-top:48px;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line);padding-top:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+
+<nav class="units" aria-label="Units"><div class="in">
+  <a href="#rules" data-unit="rules"><b>1</b>The rules</a>
+  <a href="#examples" data-unit="examples"><b>2</b>Worked examples</a>
+  <a href="#practice" data-unit="practice"><b>3</b>Practice</a>
+  <a href="#flags" data-unit="flags"><b>4</b>Control flags</a>
+  <span class="progress" aria-live="polite"><span class="pbar"><i id="pfill"></i></span><span id="ptext">0 / 16</span></span>
+</div></nav>
+
+<div class="wrap">
+<header class="hero">
+  <h1>Sequence &amp; Acknowledgment Numbers</h1>
+</header>
+
+<!-- UNIT 1 -->
+<section class="unit" id="rules">
+  <div class="chunk" data-step="0">
+    <div class="unit-head">
+      <p class="keyidea">TCP numbers <mark>bytes</mark>.</p>
+      <p><span class="A">Host A</span> and <span class="B">Host B</span> each have their own independent sequence and ACK numbers, to track the bytes they send and acknowledge the bytes they receive.</p></div>
+    <div class="check" id="chk0"></div>
+  </div>
+  <div class="chunk" data-step="1">
+    <div class="rule"><h3>SEQ: “here is where my data starts”</h3>
+      <p>The sequence number is the number of the <strong>first byte</strong> in this segment. The next segment from the same host starts right after the last byte of this one.</p>
+      <div class="formula">next SEQ = this SEQ + bytes sent</div></div>
+    <div class="check" id="chk1"></div>
+  </div>
+  <div class="chunk" data-step="2">
+    <div class="rule"><h3>ACK: “I want this byte next”</h3>
+      <p>The acknowledgment number is the <strong>next byte I expect</strong> from the other side. It is cumulative: it covers everything received so far.</p>
+      <div class="formula">ACK = their SEQ + their bytes</div></div>
+    <div class="check" id="chk2"></div>
+  </div>
+  <div class="chunk" data-step="3">
+    <div class="rule"><h3>Special cases</h3>
+      <p>A segment with <strong>0 bytes</strong> (a pure ACK) does not move the sender’s SEQ. <strong>SYN</strong> and <strong>FIN</strong> each use up exactly one sequence number, even with no data.</p>
+      <div class="formula">SYN or FIN → SEQ + 1</div></div>
+    <div class="check" id="chk3"></div>
+  </div>
+  <div class="chunk" data-step="4">
+    <div class="ruler-card">
+      <h3>Picture A’s byte stream</h3>
+      <div class="ruler" aria-label="Byte stream from Host A">
+        <div class="seg s1"><strong>Segment 1</strong><span>SEQ 1001</span><span>200 bytes</span></div>
+        <div class="seg s2"><strong>Segment 2</strong><span>SEQ 1201</span><span>200 bytes</span></div>
+        <div class="seg s3"><strong>Not sent yet</strong><span>…</span></div>
+      </div>
+      <p class="ruler-note">Segment 1 carries 200 bytes, numbered 1001 to 1200. So segment 2 starts at <b class="mono">1201</b>. Once B has both segments, B tells A which byte it wants next.</p>
+    </div>
+    <div class="check" id="chk4"></div>
+  </div>
+</section>
+
+<!-- UNIT 2 -->
+<section class="unit" id="examples">
+  <div class="chunk" data-step="5">
+    <div class="unit-head"><h2>Worked examples</h2>
+      <p>Press <b>Next step</b> to send each segment. Read the calculation under the diagram before moving on. The next part opens after the last step.</p></div>
+    <div id="ex1"></div>
+  </div>
+  <div class="chunk" data-step="6"><div id="ex2"></div></div>
+</section>
+
+<!-- UNIT 3 -->
+<section class="unit" id="practice">
+  <div class="chunk" data-step="7">
+    <div class="unit-head"><h2>Your turn</h2>
+      <p>Fill in every yellow box, then press <b>Check</b>. Time runs top to bottom: a segment drawn higher has already arrived before the ones below it are sent.</p></div>
+    <div id="p1"></div>
+  </div>
+  <div class="chunk" data-step="8"><div id="p2"></div></div>
+</section>
+
+<!-- UNIT 4 -->
+<section class="unit" id="flags">
+  <div class="chunk" data-step="9">
+    <div class="unit-head"><h2>Control flags</h2>
+      <p>Byte 13 of the TCP header holds eight one-bit flags. Each bit switches on a meaning. Start with the two you will see most.</p></div>
+    <div class="card">
+      <div class="bitstrip" id="refstrip"></div>
+      <div class="readout" id="refread"></div>
+    </div>
+    <div class="flagdefs" id="defs1"></div>
+    <div class="check" id="chk9"></div>
+  </div>
+  <div class="chunk" data-step="10">
+    <div class="flagdefs" id="defs2"></div>
+    <div class="check" id="chk10"></div>
+  </div>
+  <div class="chunk" data-step="11">
+    <div class="flagdefs" id="defs3"></div>
+    <div class="check" id="chk11"></div>
+  </div>
+  <div class="chunk" data-step="12">
+    <div class="unit-head"><h3>A connection’s whole life</h3>
+      <p>Three-way handshake, one data segment, then a four-way close. Watch how SYN and FIN each add one to the sequence number.</p></div>
+    <div id="fx"></div>
+  </div>
+  <div class="chunk" data-step="13">
+    <div class="unit-head"><h3>Activity A: set the flags</h3>
+      <p>For each situation, switch on the bits that belong in the flags byte. Get all seven right to continue.</p></div>
+    <div class="quiz" id="flagquiz"></div>
+    <div class="controls"><span class="score" id="flagscore">0 / 7 correct</span></div>
+  </div>
+  <div class="chunk" data-step="14">
+    <div class="unit-head"><h3>Activity B: handshake to goodbye</h3>
+      <p>Client ISN is 4200, server ISN is 9100. Fill in the blanks for a full connection.</p></div>
+    <div id="p3"></div>
+  </div>
+  <div class="chunk" data-step="15">
+    <div class="done-card"><h2>Lab complete</h2><p>You worked through every part: sequence numbers, acknowledgments, and control flags. Keep practising with random problems in Practice 2.</p></div>
+  </div>
+</section>
+
+<div class="locked" id="locked" role="status">Locked. Answer the question above correctly to open the next part.</div>
+
+<footer><p>Assumes each segment arrives before the next one below it is sent, and no segments are lost.</p>
+  <button id="resetall" type="button">Start over</button></footer>
+
+</div>
+
+<script>
+(function(){
+const OTHER={A:'B',B:'A'};
+const FLAGBITS=[['CWR',0x80],['ECE',0x40],['URG',0x20],['ACK',0x10],['PSH',0x08],['RST',0x04],['SYN',0x02],['FIN',0x01]];
+
+function compute(sc){
+  const next={A:sc.a0,B:sc.b0}, hist={A:[sc.a0],B:[sc.b0]};
+  return sc.events.map((e,i)=>{
+    const to=OTHER[e.from], flags=e.flags||null;
+    const consume=e.bytes+(flags&&flags.includes('SYN')?1:0)+(flags&&flags.includes('FIN')?1:0);
+    const r={...e,i,to,flags,consume,seq:next[e.from],ack:next[to],
+      showAck:!flags||flags.includes('ACK'),staleAcks:hist[to].slice(0,-1),blanks:e.blanks||[]};
+    next[e.from]+=consume; hist[e.from].push(next[e.from]);
+    r.after={...next}; return r;
+  });
+}
+function usedText(r){
+  const p=[];
+  if(r.bytes) p.push(r.bytes+' bytes');
+  if(r.flags&&r.flags.includes('SYN')) p.push('1 for SYN');
+  if(r.flags&&r.flags.includes('FIN')) p.push('1 for FIN');
+  return p;
+}
+function explainSeq(rows,i){
+  const r=rows[i]; let prev=null;
+  for(let k=i-1;k>=0;k--) if(rows[k].from===r.from){prev=rows[k];break;}
+  if(!prev){
+    if(r.flags&&r.flags.includes('SYN')) return `${r.from} picks its starting number (ISN): <b>${r.seq}</b>.`;
+    if(i===0) return `Given: ${r.from} starts at <b>${r.seq}</b>.`;
+    // first segment from this side: matches what the other side acknowledged
+    return `${r.from} hasn’t sent before. It starts at <b>${r.seq}</b>, exactly the byte ${r.to} asked for in its ACK.`;
+  }
+  const u=usedText(prev);
+  if(!u.length) return `${r.from}’s last segment (#${prev.i+1}) carried 0 bytes, so SEQ stays <b>${r.seq}</b>.`;
+  return `${r.from}’s last segment (#${prev.i+1}) had SEQ ${prev.seq} and used ${u.join(' + ')} → ${prev.seq} + ${prev.consume} = <b>${r.seq}</b>.`;
+}
+function explainAck(rows,i){
+  const r=rows[i];
+  if(!r.showAck) return `No ACK flag, so the ACK field means nothing yet.`;
+  let last=null;
+  for(let k=i-1;k>=0;k--) if(rows[k].from===r.to){last=rows[k];break;}
+  if(!last) return i===0?`Given: ${r.from} expects byte <b>${r.ack}</b> from ${r.to} next.`:`${r.to} hasn’t sent anything yet, so ${r.from} still expects byte <b>${r.ack}</b>.`;
+  const u=usedText(last);
+  if(!u.length) return `${r.to}’s latest segment (#${last.i+1}) carried 0 bytes, so ${r.from} still expects <b>${r.ack}</b>.`;
+  return `${r.to}’s latest segment (#${last.i+1}) had SEQ ${last.seq} and used ${u.join(' + ')} → ${last.seq} + ${last.consume} = <b>${r.ack}</b>, the next byte ${r.from} expects.`;
+}
+
+function ladderHTML(rows,opts){
+  const pre=opts.id;
+  let h=`<div class="ladder"><div class="hosts"><div class="host hA"><div class="avatar">A</div>Host A</div><div></div><div class="host hB"><div class="avatar">B</div>Host B</div></div>`;
+  rows.forEach((r,i)=>{
+    const dir=r.from==='A'?'ab':'ba';
+    const val=(k)=>{
+      if(opts.practice&&r.blanks.includes(k))
+        return `<input class="blank" id="${pre}-r${i}-${k}" inputmode="numeric" autocomplete="off" placeholder="?" aria-label="Segment ${i+1} ${k.toUpperCase()}">`;
+      return `<span class="v" data-k="${k}">${r[k]}</span>`;
+    };
+    const fl=(r.flags||[]).map(f=>`<span class="flag">${f}</span>`).join('');
+    const ack=r.showAck?`ACK = ${val('ack')}`:`<span class="dash">ACK = —</span>`;
+    const by=r.bytes?`[${r.bytes} bytes]`:`[0 bytes]`;
+    h+=`<div class="row ${dir}" data-i="${i}"><div class="tl"></div><div class="lane"><div class="lbl"><span class="num">${i+1}</span>${fl}<span>SEQ = ${val('seq')}</span><span>${ack}</span><span class="bytes">${by}</span></div><div class="arrow"></div></div><div class="tl"></div></div>`;
+  });
+  return h+`</div>`;
+}
+
+/* ---------- stepper ---------- */
+function makeStepper(el,sc,title,blurb,id,onEnd){
+  const rows=compute(sc); let step=1;
+  el.innerHTML=`<div class="card"><div class="card-top"><h3>${title}</h3><p>${blurb}</p></div>
+    ${ladderHTML(rows,{id})}
+    <div class="explain"><div class="text" id="${id}-text"></div><div class="states" id="${id}-st"></div></div>
+    <div class="controls"><button id="${id}-prev">Previous</button><button class="primary" id="${id}-next">Next step</button><span class="prog" id="${id}-prog"></span></div></div>`;
+  const rowEls=[...el.querySelectorAll('.row')];
+  function render(){
+    rowEls.forEach((re,i)=>{
+      re.classList.toggle('future',i>=step); re.classList.toggle('current',i===step-1);
+      re.querySelectorAll('.v').forEach(v=>v.classList.toggle('just',i===step-1));
+    });
+    const r=rows[step-1];
+    const flagNote=r.flags?`<div><b>Flags:</b> ${flagWhy(r.flags)}</div>`:'';
+    el.querySelector(`#${id}-text`).innerHTML=`<p><b>Segment ${step}:</b> <span class="${r.from}">Host ${r.from}</span> → <span class="${r.to}">Host ${r.to}</span>, ${r.bytes} bytes${r.bytes?` (bytes ${r.seq}–${r.seq+r.bytes-1})`:''}.</p>
+      <div class="calc"><div><b>SEQ</b> · ${explainSeq(rows,step-1)}</div><div><b>ACK</b> · ${explainAck(rows,step-1)}</div>${flagNote}</div>`;
+    const a=r.after;
+    el.querySelector(`#${id}-st`).innerHTML=
+      `<div class="st A"><small>A · SEQ #</small><span>${a.A}</span><em>next byte A sends</em></div>
+       <div class="st B"><small>B · SEQ #</small><span>${a.B}</span><em>next byte B sends</em></div>
+       <div class="st A"><small>A · ACK #</small><span>${a.B}</span><em>byte A expects</em></div>
+       <div class="st B"><small>B · ACK #</small><span>${a.A}</span><em>byte B expects</em></div>`;
+    el.querySelector(`#${id}-prog`).textContent=`step ${step} / ${rows.length}`;
+    el.querySelector(`#${id}-prev`).disabled=step<=1;
+    el.querySelector(`#${id}-next`).disabled=step>=rows.length;
+    if(step===rows.length&&onEnd) onEnd();
+  }
+  el.querySelector(`#${id}-prev`).onclick=()=>{if(step>1){step--;render();}};
+  el.querySelector(`#${id}-next`).onclick=()=>{if(step<rows.length){step++;render();}};
+    render();
+}
+function flagWhy(f){
+  const k=f.join('+');
+  const m={'SYN':'SYN asks to open a connection and announces the ISN.',
+    'SYN+ACK':'SYN+ACK: the server announces its own ISN and acknowledges the client’s SYN.',
+    'ACK':'ACK only: confirms what has been received.',
+    'PSH+ACK':'PSH+ACK: data that should go to the application right away, plus an acknowledgment.',
+    'FIN+ACK':'FIN+ACK: “I have nothing more to send”, plus an acknowledgment.'};
+  return m[k]||k;
+}
+
+/* ---------- practice ---------- */
+let solvedCount=0;
+function makePractice(el,scOrGen,title,blurb,id,isGen,opts){
+  opts=opts||{};
+  let sc=isGen?scOrGen():scOrGen, rows, solved=false, revealed=false;
+  function build(){
+    rows=compute(sc); solved=false; revealed=false;
+    el.innerHTML=`<div class="card"><div class="card-top"><h3>${title}</h3><p>${blurb}</p></div>
+      ${ladderHTML(rows,{id,practice:true})}
+      <div class="feedback" id="${id}-fb" aria-live="polite"></div>
+      <div class="controls"><button class="primary" id="${id}-check">Check</button><button id="${id}-show" disabled title="Fill in every box and press Check first">Show answers</button>${isGen?`<button id="${id}-new">New problem</button>`:''}<button id="${id}-reset">Clear</button></div></div>`;
+    el.querySelector(`#${id}-check`).onclick=check;
+    el.querySelector(`#${id}-show`).onclick=reveal;
+    el.querySelector(`#${id}-reset`).onclick=()=>{el.querySelectorAll('.blank').forEach(b=>{b.value='';b.classList.remove('ok','bad')});fb('');};
+    if(isGen) el.querySelector(`#${id}-new`).onclick=()=>{sc=scOrGen();build();};
+    el.querySelectorAll('.blank').forEach(b=>b.addEventListener('keydown',e=>{if(e.key==='Enter')check();}));
+  }
+  const fb=h=>el.querySelector(`#${id}-fb`).innerHTML=h;
+  function check(){
+    let wrong=[],empty=0,total=0;
+    rows.forEach((r,i)=>r.blanks.forEach(k=>{
+      total++;
+      const inp=el.querySelector(`#${id}-r${i}-${k}`); const s=inp.value.trim();
+      inp.classList.remove('ok','bad');
+      if(!s){empty++;return;}
+      const v=parseInt(s.replace(/[^0-9-]/g,''),10);
+      if(v===r[k]) inp.classList.add('ok'); else {inp.classList.add('bad'); wrong.push(hint(r,k,v));}
+    }));
+    let h='';
+    if(!empty){const sb=el.querySelector(`#${id}-show`);sb.disabled=false;sb.removeAttribute('title');}
+    if(!wrong.length&&!empty){
+      if(revealed&&opts.requireOwn){
+        h=`<div class="fb info">The answers were shown for this problem, so it does not count. Press <b>New problem</b> and solve one on your own.</div>`;
+      } else {
+        h=`<div class="fb ok"><b>All ${total} correct.</b> ${isGen?'Try a new problem to keep practising.':'Nicely done.'}</div>`;
+        if(!solved){solved=true;solvedCount++;}
+        if(opts.onSolved) opts.onSolved();
+      }
+    } else {
+      if(empty) h+=`<div class="fb info">${empty} box${empty>1?'es are':' is'} still empty. Fill in every box and check once before you can see the answers.</div>`;
+      h+=wrong.map(w=>`<div class="fb bad">${w}</div>`).join('');
+    }
+    fb(h);
+  }
+  function hint(r,k,v){
+    const n=`Segment ${r.i+1} ${k.toUpperCase()}:`;
+    if(Math.abs(v-r[k])===1&&rows.some(x=>x.flags&&(x.flags.includes('SYN')||x.flags.includes('FIN'))))
+      return `${n} off by one. Remember SYN and FIN each use up one sequence number.`;
+    if(k==='seq') return `${n} find the last segment Host ${r.from} sent and add the bytes it carried.`;
+    if(r.staleAcks.includes(v)){
+      const later=rows.slice(0,r.i).filter(x=>x.from===r.to).pop();
+      return `${n} that value ignores segment ${later?later.i+1:''}, which had already arrived before this was sent. ACK is cumulative: count everything ${r.from} has received so far.`;
+    }
+    return `${n} what byte does Host ${r.from} expect next from Host ${r.to}? Take ${r.to}’s latest SEQ and add what that segment carried.`;
+  }
+  function reveal(){
+    revealed=true; let h='';
+    rows.forEach((r,i)=>r.blanks.forEach(k=>{
+      const inp=el.querySelector(`#${id}-r${i}-${k}`); inp.value=r[k]; inp.classList.remove('bad'); inp.classList.add('ok');
+      h+=`<div class="fb info"><b>#${i+1} ${k.toUpperCase()} = ${r[k]}</b> · ${k==='seq'?explainSeq(rows,i):explainAck(rows,i)}</div>`;
+    }));
+    fb(h);
+  }
+  build();
+}
+
+function genProblem(){
+  const base=()=>(Math.floor(Math.random()*85)+10)*100+1;
+  const a0=base(); let b0=base(); while(Math.abs(b0-a0)<1000) b0=base();
+  const n=4+Math.floor(Math.random()*3);
+  const sizes=[0,50,100,150,200,250,300,400];
+  const ev=[{from:'A',bytes:[100,200,300,400,500][Math.floor(Math.random()*5)]}];
+  for(let i=1;i<n;i++){
+    const last=ev[i-1].from;
+    const from=Math.random()<.65?OTHER[last]:last;
+    let bytes=sizes[Math.floor(Math.random()*sizes.length)];
+    if(bytes===0&&ev[i-1].bytes===0) bytes=100;
+    const opts=[['seq'],['ack'],['seq','ack'],['seq','ack']];
+    ev.push({from,bytes,blanks:opts[Math.floor(Math.random()*opts.length)]});
+  }
+  return {a0,b0,events:ev};
+}
+
+/* ---------- build units 2 & 3 ---------- */
+makeStepper(document.getElementById('ex1'),
+  {a0:1001,b0:3001,events:[{from:'A',bytes:200},{from:'B',bytes:100},{from:'A',bytes:200},{from:'B',bytes:0}]},
+  'Example 1: taking turns','Each host replies after the other one speaks.','ex1',()=>pass(5));
+makeStepper(document.getElementById('ex2'),
+  {a0:5001,b0:8001,events:[{from:'A',bytes:500},{from:'A',bytes:300},{from:'B',bytes:0},{from:'B',bytes:150},{from:'A',bytes:0}]},
+  'Example 2: back-to-back segments','A sends twice before B answers, and some segments carry no data.','ex2',()=>pass(6));
+makePractice(document.getElementById('p1'),
+  {a0:1001,b0:3001,events:[{from:'A',bytes:200},{from:'A',bytes:200,blanks:['ack']},{from:'B',bytes:100,blanks:['ack']},{from:'B',bytes:100,blanks:['seq','ack']}]},
+  'Practice 1: from the slide','A sends two segments before B replies. Watch what each side has received.','p1',false,{onSolved:()=>pass(7)});
+makePractice(document.getElementById('p2'),genProblem,
+  'Practice 2: random problems','Solve one on your own (without Show answers) to continue. Press New problem for more.','p2',true,{requireOwn:true,onSolved:()=>pass(8)});
+
+/* ---------- unit 4: flags ---------- */
+const DEFS={
+  SYN:['Synchronize','Opens a connection and announces the sender’s starting sequence number (ISN). Uses one sequence number.','Seen in: the first two handshake segments.'],
+  ACK:['Acknowledge','The ACK number field is valid. Set on almost every segment after the first SYN.','Seen in: everything except the opening SYN.'],
+  FIN:['Finish','The sender has no more data to send. Closes one direction of the connection. Uses one sequence number.','Seen in: connection teardown.'],
+  RST:['Reset','Abort the connection immediately. No graceful goodbye; buffered data is thrown away.','Seen in: a port nobody listens on, a crashed connection.'],
+  PSH:['Push','Hand this data to the application now instead of waiting to fill a buffer.','Seen in: interactive traffic like an HTTP request or SSH keystrokes.'],
+  URG:['Urgent','The Urgent Pointer field is valid and marks urgent data. Rarely used today.','Seen in: legacy Telnet interrupts.'],
+  ECE:['ECN-Echo','Tells the sender the network signalled congestion (Explicit Congestion Notification).','Seen in: congestion control.'],
+  CWR:['Congestion Window Reduced','The sender confirms it slowed down after an ECN-Echo.','Seen in: congestion control.']};
+const refStrip=document.getElementById('refstrip'), defsEl=null;
+const ORDER=['SYN','ACK','FIN','RST','PSH','URG','ECE','CWR'];
+const defHTML=f=>{const bit=FLAGBITS.find(x=>x[0]===f)[1];
+  return `<div class="fdef ${['ECE','CWR'].includes(f)?'minor':''}" id="def-${f}"><div class="h"><h3>${f}</h3><span>${DEFS[f][0]} · 0x${bit.toString(16).padStart(2,'0')}</span></div><p>${DEFS[f][1]}</p><p class="use">${DEFS[f][2]}</p></div>`};
+[['defs1',['SYN','ACK']],['defs2',['FIN','RST']],['defs3',['PSH','URG','ECE','CWR']]].forEach(([id,fs])=>document.getElementById(id).innerHTML=fs.map(defHTML).join(''));
+function stripHTML(prefix){return FLAGBITS.map(([f,b])=>`<button class="bitcell" type="button" aria-pressed="false" data-f="${f}" data-b="${b}" id="${prefix}-${f}"><b>${f}</b><small>0x${b.toString(16).padStart(2,'0')}</small></button>`).join('');}
+function readout(v){return `<span>binary <b>${v.toString(2).padStart(8,'0')}</b></span><span>hex <b>0x${v.toString(16).padStart(2,'0').toUpperCase()}</b></span><span>flags <b>${FLAGBITS.filter(x=>v&x[1]).map(x=>x[0]).join(' + ')||'none'}</b></span>`;}
+refStrip.innerHTML=stripHTML('ref');
+let refVal=0x12;
+function refRender(){refStrip.querySelectorAll('.bitcell').forEach(c=>c.setAttribute('aria-pressed',!!(refVal&+c.dataset.b)));
+  document.getElementById('refread').innerHTML=readout(refVal)+`<span>· example shown: a SYN+ACK segment</span>`;
+  ORDER.forEach(f=>document.getElementById('def-'+f).classList.toggle('sel',!!(refVal&FLAGBITS.find(x=>x[0]===f)[1])));}
+refStrip.addEventListener('click',e=>{const c=e.target.closest('.bitcell');if(!c)return;refVal^=+c.dataset.b;refRender();
+  document.getElementById('refread').lastElementChild.textContent='· toggle any bit to compare';});
+refRender();
+
+makeStepper(document.getElementById('fx'),
+  {a0:2000,b0:5000,events:[
+    {from:'A',bytes:0,flags:['SYN']},{from:'B',bytes:0,flags:['SYN','ACK']},{from:'A',bytes:0,flags:['ACK']},
+    {from:'A',bytes:50,flags:['PSH','ACK']},{from:'B',bytes:0,flags:['ACK']},
+    {from:'A',bytes:0,flags:['FIN','ACK']},{from:'B',bytes:0,flags:['FIN','ACK']},{from:'A',bytes:0,flags:['ACK']}]},
+  'Client A ↔ Server B','Client ISN 2000, server ISN 5000.','fx',()=>pass(12));
+
+const QS=[
+  {q:'A client opens a connection to a web server.',ans:[0x02],why:'Only SYN. There is nothing to acknowledge yet.'},
+  {q:'The server accepts and replies to that request.',ans:[0x12],why:'SYN + ACK: the server sends its own ISN and acknowledges the client’s SYN.'},
+  {q:'The client confirms, completing the three-way handshake.',ans:[0x10],why:'ACK alone finishes the handshake.'},
+  {q:'The client sends an HTTP request and wants it handed to the application right away.',ans:[0x18],why:'PSH + ACK: push the data up now, and keep acknowledging.'},
+  {q:'The client has nothing more to send and starts closing the connection.',ans:[0x11,0x01],why:'FIN (normally with ACK set, as after the handshake ACK is always on).'},
+  {q:'A segment arrives for a port where nothing is listening. The receiver refuses it outright.',ans:[0x14,0x04],why:'RST (usually with ACK) aborts immediately.'},
+  {q:'Decode a capture: the flags byte is <code>0x19</code>. Switch on the matching bits.',ans:[0x19],why:'0x19 = 0x10 + 0x08 + 0x01 → ACK + PSH + FIN: the last data and a close in one segment.'}];
+const quiz=document.getElementById('flagquiz'); const solvedQ=new Set();
+quiz.innerHTML=QS.map((s,i)=>`<div class="qcard" id="q${i}"><div class="qtop"><span class="num">${i+1}</span><p>${s.q}</p></div>
+  <div class="bitstrip">${stripHTML('q'+i)}</div><div class="readout" id="q${i}-read">${readout(0)}</div>
+  <div class="controls"><button class="primary" id="q${i}-check">Check</button></div>
+  <div class="feedback" id="q${i}-fb" aria-live="polite"></div></div>`).join('');
+QS.forEach((s,i)=>{
+  const card=document.getElementById('q'+i); let v=0, tries=0;
+  const set=n=>{v=n;card.querySelectorAll('.bitcell').forEach(c=>c.setAttribute('aria-pressed',!!(v&+c.dataset.b)));document.getElementById(`q${i}-read`).innerHTML=readout(v);};
+  card.querySelector('.bitstrip').addEventListener('click',e=>{const c=e.target.closest('.bitcell');if(c){set(v^+c.dataset.b);document.getElementById(`q${i}-fb`).innerHTML='';}});
+  const fb=h=>document.getElementById(`q${i}-fb`).innerHTML=h;
+  document.getElementById(`q${i}-check`).onclick=()=>{
+    if(s.ans.includes(v)){fb(`<div class="fb ok"><b>Correct.</b> ${s.why}</div>`);card.classList.add('solved');solvedQ.add(i);}
+    else{
+      const want=s.ans[0], miss=FLAGBITS.filter(x=>(want&x[1])&&!(v&x[1])).map(x=>x[0]), extra=FLAGBITS.filter(x=>!(want&x[1])&&(v&x[1])&&!s.ans.some(a=>a&x[1])).map(x=>x[0]);
+      let m=v===0?'No bits are on yet.':[miss.length?`Something is missing (${miss.length} bit${miss.length>1?'s':''}).`:'',extra.length?`Not needed: ${extra.join(', ')}.`:''].join(' ');
+      tries++;
+      fb(`<div class="fb bad"><b>Not yet.</b> ${m}${tries>=2?`<br><b>Hint:</b> ${s.why}`:''}</div>`);card.classList.remove('solved');solvedQ.delete(i);}
+    document.getElementById('flagscore').textContent=`${solvedQ.size} / ${QS.length} correct`;
+    if(solvedQ.size===QS.length) pass(13);};
+});
+
+makePractice(document.getElementById('p3'),
+  {a0:4200,b0:9100,events:[
+    {from:'A',bytes:0,flags:['SYN']},
+    {from:'B',bytes:0,flags:['SYN','ACK'],blanks:['ack']},
+    {from:'A',bytes:0,flags:['ACK'],blanks:['seq','ack']},
+    {from:'A',bytes:100,flags:['PSH','ACK'],blanks:['seq']},
+    {from:'A',bytes:0,flags:['FIN','ACK'],blanks:['seq','ack']},
+    {from:'B',bytes:0,flags:['FIN','ACK'],blanks:['seq','ack']},
+    {from:'A',bytes:0,flags:['ACK'],blanks:['seq','ack']}]},
+  'Client A ↔ Server B','Watch for the +1 from SYN and FIN.','p3',false,{onSolved:()=>pass(14)});
+
+/* ---------- reading gates ---------- */
+const CHECKS={
+  0:{type:'mc',q:'What does a TCP sequence number count?',opts:['Packets sent','Bytes of data','Segments received'],ans:1,
+     why:'TCP numbers every byte in the stream, not packets or segments.'},
+  1:{type:'num',q:'A segment has SEQ = 4001 and carries 300 bytes. What SEQ will the sender’s next segment use?',ans:4301,
+     hint:'Add the bytes sent to this SEQ.',why:'4001 + 300 = 4301.'},
+  2:{type:'num',q:'B receives a segment with SEQ = 7001 carrying 150 bytes. Nothing earlier is missing. What ACK number does B send?',ans:7151,
+     hint:'ACK names the next byte B expects: their SEQ + their bytes.',why:'7001 + 150 = 7151.'},
+  3:{type:'num',q:'Host A sends a SYN with SEQ = 2500 and no data. What SEQ does A’s next segment use?',ans:2501,
+     hint:'Re-read the special cases: what does a SYN use up?',why:'SYN uses one sequence number: 2500 + 1 = 2501.'},
+  4:{type:'num',q:'B has received segments 1 and 2 from the picture. What ACK number does B send back?',ans:1401,
+     hint:'Find the last byte of segment 2, then ask for the one after it.',why:'Segment 2 covers bytes 1201–1400, so B asks for 1401.'},
+  9:{type:'mc',q:'Which flag is set on almost every segment after the very first SYN?',opts:['SYN','ACK','Neither'],ans:1,
+     why:'Once the first SYN is sent, every segment also acknowledges, so ACK stays on.'},
+  10:{type:'mc',q:'A connection must end immediately and its buffered data can be thrown away. Which flag?',opts:['FIN','RST','ACK'],ans:1,
+     why:'RST aborts. FIN is the polite close that lets data finish.'},
+  11:{type:'mc',q:'Which flag asks the receiver to hand the data to the application right away?',opts:['URG','PSH','CWR'],ans:1,
+     why:'PSH means push this data up to the application now.'}};
+const TOTAL=16;
+const chunks=[...document.querySelectorAll('.chunk')];
+let reached=0;
+try{reached=Math.min(TOTAL-1,parseInt(localStorage.getItem('tcp-lab-reached')||'0',10)||0);}catch(e){}
+
+function renderCheck(k){
+  const c=CHECKS[k], el=document.getElementById('chk'+k); if(!c||!el) return;
+  const done=k<reached;
+  const body=c.type==='mc'
+    ? `<div class="opts">${c.opts.map((o,i)=>`<button type="button" data-i="${i}" class="${done&&i===c.ans?'right':''}" ${done?'disabled':''}>${o}</button>`).join('')}</div>`
+    : `<div class="controls"><input class="numin" id="chk${k}-in" inputmode="numeric" autocomplete="off" aria-label="Your answer" ${done?`value="${c.ans}" disabled`:''}><button class="primary" type="button" id="chk${k}-go" ${done?'disabled':''}>Check</button></div>`;
+  el.className='check'+(done?' passed':'');
+  el.innerHTML=`<span class="tag">${done?'Answered':'Check your understanding'}</span><p class="q">${c.q}</p>${body}<div class="feedback" aria-live="polite">${done?`<div class="fb ok">${c.why}</div>`:''}</div>`;
+  if(done) return;
+  const fb=h=>el.querySelector('.feedback').innerHTML=h;
+  const ok=()=>{el.classList.add('passed');el.querySelector('.tag').textContent='Answered';fb(`<div class="fb ok"><b>Correct.</b> ${c.why}</div>`);
+    el.querySelectorAll('button,input').forEach(x=>x.disabled=true);pass(k);};
+  if(c.type==='mc'){
+    el.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>{
+      if(+b.dataset.i===c.ans){b.classList.add('right');ok();}
+      else{b.classList.add('wrong');b.disabled=true;fb(`<div class="fb bad"><b>Not quite.</b> Read the part above again and try another answer.</div>`);}});
+  } else {
+    const inp=el.querySelector('input'), go=()=>{
+      const v=parseInt(inp.value.replace(/[^0-9-]/g,''),10);
+      if(isNaN(v)){fb(`<div class="fb info">Type a number first.</div>`);return;}
+      if(v===c.ans) ok(); else fb(`<div class="fb bad"><b>Not quite.</b> ${c.hint}</div>`);};
+    el.querySelector('button').onclick=go; inp.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+  }
+}
+function applyGates(scrollTo){
+  chunks.forEach(ch=>{const k=+ch.dataset.step; ch.hidden=k>reached;});
+  document.querySelectorAll('section.unit').forEach(sec=>{sec.hidden=![...sec.querySelectorAll('.chunk')].some(c=>!c.hidden);});
+  document.querySelectorAll('nav.units a').forEach(a=>{const sec=document.getElementById(a.dataset.unit);const off=sec.hidden;a.classList.toggle('off',off);a.setAttribute('aria-disabled',off);a.tabIndex=off?-1:0;});
+  document.getElementById('locked').hidden=reached>=TOTAL-1;
+  const doneN=Math.min(reached,TOTAL-1);
+  document.getElementById('pfill').style.width=(doneN/(TOTAL-1)*100)+'%';
+  document.getElementById('ptext').textContent=`${doneN} / ${TOTAL-1}`;
+  if(scrollTo!=null){const ch=chunks.find(c=>+c.dataset.step===scrollTo);if(ch){ch.classList.add('fresh');
+    setTimeout(()=>ch.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'}),350);}}
+}
+function pass(k){
+  if(k!==reached) return;
+  reached=k+1;
+  try{localStorage.setItem('tcp-lab-reached',String(reached));}catch(e){}
+  applyGates(reached);
+}
+Object.keys(CHECKS).forEach(k=>renderCheck(+k));
+applyGates(null);
+const rb=document.getElementById('resetall'); let armed=false;
+rb.onclick=()=>{
+  if(!armed){armed=true;rb.textContent='Click again to erase your progress';setTimeout(()=>{armed=false;rb.textContent='Start over';},4000);return;}
+  try{localStorage.removeItem('tcp-lab-reached');}catch(e){}
+  reached=0; armed=false; rb.textContent='Start over';
+  Object.keys(CHECKS).forEach(k=>renderCheck(+k)); applyGates(null); window.scrollTo(0,0);
+};
+})();
+</script>
+
+</body></html>
