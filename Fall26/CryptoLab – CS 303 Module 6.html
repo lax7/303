@@ -1,0 +1,142 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>CryptoLab – CS 303 Module 6</title>
+<style>
+:root{--bg:#f5f6fb;--cd:#fff;--tx:#1b1f2a;--mu:#5b6478;--ac:#4f46e5;--ok:#15803d;--no:#b91c1c;--bd:#dde1ee;--mo:#eceefa;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1120;--cd:#171b30;--tx:#e8eaf6;--mu:#9aa3c0;--ac:#8b85ff;--ok:#4ade80;--no:#f87171;--bd:#2a3050;--mo:#20253f}}
+:root[data-theme="dark"]{--bg:#0e1120;--cd:#171b30;--tx:#e8eaf6;--mu:#9aa3c0;--ac:#8b85ff;--ok:#4ade80;--no:#f87171;--bd:#2a3050;--mo:#20253f}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:22px 16px 8px;max-width:980px;margin:auto}h1{margin:0;font-size:26px}h1 span{color:var(--ac)}.sub{color:var(--mu);margin:2px 0 10px}
+.pb{height:10px;background:var(--mo);border-radius:9px;overflow:hidden}.pb i{display:block;height:100%;width:0;background:var(--ac);transition:width .4s}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;overflow-x:auto;padding:8px 16px;max-width:980px;margin:auto}
+nav button{white-space:nowrap;border:1px solid var(--bd);background:var(--cd);color:var(--tx);padding:7px 12px;border-radius:20px;cursor:pointer;font:inherit;font-size:14px}nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+main{max-width:980px;margin:auto;padding:8px 16px 40px}section{display:none}section.on{display:block}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:16px;margin:12px 0}.card h2{margin:0 0 6px;font-size:19px}.tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.05em;padding:2px 9px;border-radius:9px;margin-bottom:6px;color:#fff}
+.rd{background:#4f46e5}.do{background:#0d9488}.dy{background:#c2410c}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}input,select,button{font:inherit;color:var(--tx)}
+input[type=text],input:not([type]){background:var(--mo);border:1px solid var(--bd);border-radius:8px;padding:7px 10px;min-width:0}
+button.b,.chk,.opt{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:7px 14px;cursor:pointer}.opt{background:var(--mo);color:var(--tx);border:1px solid var(--bd)}.opt:hover{border-color:var(--ac)}
+.mono{font-family:ui-monospace,Consolas,monospace;background:var(--mo);border-radius:8px;padding:8px 10px;word-break:break-all;margin:4px 0}.mu{color:var(--mu);font-size:14px}
+.q{border-top:1px dashed var(--bd);padding:10px 0}.fb{min-height:20px;font-size:14px;margin-top:4px}.fb.ok{color:var(--ok)}.fb.no{color:var(--no)}details{font-size:14px;color:var(--mu)}
+#c3d{height:360px;background:radial-gradient(#1c2447,#080b18);border-radius:12px;overflow:hidden;touch-action:pan-y;cursor:grab}
+canvas.ch{width:100%;height:160px;display:block}.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px;font:13px ui-monospace,monospace}.g div{background:var(--mo);padding:3px 7px;border-radius:6px;cursor:pointer}.g .best{outline:2px solid var(--ok)}
+.mg{display:grid;grid-template-columns:repeat(13,1fr);gap:4px}.mg label{font-size:11px;color:var(--mu);text-align:center}.mg input{width:100%;text-align:center;padding:4px 0;text-transform:uppercase}
+.ok{color:var(--ok)}.dim{color:var(--mu)}table{border-collapse:collapse;font-family:ui-monospace,monospace;font-size:14px}td,th{border:1px solid var(--bd);padding:3px 8px;text-align:center}
+</style></head><body>
+<header><h1>🔐 Crypto<span>Lab</span> <small class="mu">CS 303 · Module 6</small></h1><p class="sub">Read it → Try it → Break it. Complete every challenge to master the module.</p><div class="pb"><i id="pg"></i></div><div class="mu" id="pt"></div></header>
+<nav id="nav"></nav>
+<main>
+<section id="s1"><div class="card"><span class="tag rd">READ</span><h2>Alice, Bob & Eve</h2><p>Alice sends a message to Bob over a <b>public channel</b>. Eve (a powerful adversary) can copy, delete or modify what travels. Cryptography enforces <b>CIA‑N</b>: <b>C</b>onfidentiality (encryption), <b>I</b>ntegrity (hashing), <b>A</b>vailability (redundancy), <b>N</b>on‑repudiation (digital signatures). <b>Kerckhoffs’s principle:</b> the algorithm is public — only the key is secret.</p></div>
+<div class="card"><span class="tag do">TRY IT · 3D</span><h2>The channel in 3D (drag to rotate)</h2><div id="c3d"></div>
+<div class="row"><input id="m" value="MEET AT NOON" maxlength="16" aria-label="message"><label>Key <input id="k" type="range" min="1" max="25" value="3"> <b id="kv">3</b></label><label><input type="checkbox" id="en" checked> Encrypt</label><label><input type="checkbox" id="tp"> Eve tampers</label><button class="b" id="send">Send ▶</button></div>
+<div class="mono" id="pn">Press Send to release the packet.</div><div class="mu">Experiment: turn encryption OFF and send. Then turn it on and let Eve tamper.</div></div>
+<div class="card"><span class="tag dy">DO IT YOURSELF</span><h2>Challenges</h2><p class="mu">Field task (slide 3): open amazon.com and bbc.com, click the padlock → connection details, and note the cipher suite (e.g. AES‑128/256 GCM). Then answer:</p><div id="q1"></div></div></section>
+
+<section id="s2"><div class="card"><span class="tag rd">READ</span><h2>Shift (Caesar) cipher</h2><p>Map A–Z to 0–25. <b>Enc:</b> C = (m + k) mod 26. <b>Dec:</b> m = (C − k) mod 26. Shift 3 is Caesar’s cipher; shift 13 is ROT‑13. Attack: only 26 keys, so <b>brute force</b> breaks it instantly.</p></div>
+<div class="card"><span class="tag do">TRY IT</span><h2>Cipher wheel</h2><div class="row"><input id="st" value="ATTACK TONIGHT"><label>Key <input id="sk" type="range" min="0" max="25" value="2"> <b id="skv">2</b></label><select id="sd"><option value="1">Encrypt</option><option value="-1">Decrypt</option></select></div><div class="row"><canvas id="wh" width="300" height="300" style="width:300px;max-width:100%"></canvas><div style="flex:1;min-width:200px"><div class="mono" id="so" style="font-size:20px"></div><div class="mu">Outer ring = plaintext, inner ring = ciphertext. Mini‑activity: encrypt your own name with key 3.</div></div></div></div>
+<div class="card"><span class="tag do">TRY IT · ATTACK</span><h2>Brute‑force machine</h2><div class="row"><input id="bt" value="URYYBJBEYQ"> <span class="mu">tries all 26 keys — click a row to jump to that key</span></div><div class="g" id="bg"></div></div>
+<div class="card"><span class="tag dy">DO IT YOURSELF</span><div id="q2"></div></div></section>
+
+<section id="s3"><div class="card"><span class="tag rd">READ</span><h2>Key length & key space</h2><p>An n‑bit key gives <b>2ⁿ</b> keys. Brute force is always possible in principle, so the <b>sufficient key space principle</b> demands a space so large (2¹²⁸+, 256 for quantum worries) that trying all keys takes decades. But a big key space is <i>necessary, not sufficient</i>.</p></div>
+<div class="card"><span class="tag do">TRY IT</span><h2>Brute‑force time simulator</h2><div class="row"><label>Key bits <input id="nb" type="range" min="1" max="256" value="40"> <b id="nbv">40</b></label><select id="rt"><option value="1e6">Laptop · 10⁶ keys/s</option><option value="1e9" selected>GPU · 10⁹ keys/s</option><option value="1e12">Cluster · 10¹² keys/s</option><option value="1e18">Exascale · 10¹⁸ keys/s</option></select></div>
+<div class="mono" id="ko"></div><div class="mu">Average time = half the key space. Universe age ≈ 1.38×10¹⁰ years.</div><div class="pb" style="height:18px;margin-top:8px"><i id="kb"></i></div><div class="mu">Bar: log₁₀(years) from 10⁻⁹ to 10⁷⁷ (full bar = unimaginable).</div></div>
+<div class="card"><span class="tag dy">DO IT YOURSELF</span><div id="q3"></div></div></section>
+
+<section id="s4"><div class="card"><span class="tag rd">READ</span><h2>Mono‑alphabetic substitution</h2><p>The key is a random permutation of the alphabet: 26! ≈ 2⁸⁸ keys — brute force is hopeless. But the cipher preserves <b>letter frequencies</b>: E, T, A, O are common in English, so peaks in the ciphertext give the key away.</p></div>
+<div class="card"><span class="tag do">TRY IT · BREAK IT</span><h2>Be the cryptanalyst</h2><div class="mono" id="mc"></div><canvas class="ch" id="mf"></canvas><div class="mu">Bars: <b style="color:#f97316">ciphertext</b> vs <b style="color:#6366f1">English</b>. Type your guess under each cipher letter (count in brackets).</div><div class="mg" id="mg"></div><div class="row"><button class="b" id="ms">Suggest by frequency</button><button class="b" id="mh">Reveal one letter</button><button class="b" id="mr">Clear</button></div><div class="mono" id="md" style="font-size:15px"></div><div id="mw" class="fb"></div></div>
+<div class="card"><span class="tag dy">DO IT YOURSELF</span><div id="q4"></div></div></section>
+
+<section id="s5"><div class="card"><span class="tag rd">READ</span><h2>Vigenère (poly‑alphabetic) cipher</h2><p>The key word is repeated; each plaintext letter is shifted by the matching key letter (A=0 … Z=25). One ciphertext letter can stand for many plaintext letters, so frequencies flatten. Attack: find the key length (<b>Kasiski</b>: gcd of distances between repeats; or <b>Index of Coincidence</b>), then do frequency analysis on each column.</p></div>
+<div class="card"><span class="tag do">TRY IT</span><h2>Step‑by‑step encryptor</h2><div class="row"><input id="vt" value="ATTACK TONIGHT"><input id="vk" value="KAREL" style="width:110px"></div><div style="overflow-x:auto"><table id="vtab"></table></div><div class="mono" id="vo"></div>
+<h2 style="margin-top:14px">Does it hide frequencies?</h2><canvas class="ch" id="vf"></canvas><div class="mu"><b style="color:#6366f1">Plain sample</b> vs <b style="color:#f97316">Vigenère ciphertext</b> of a 345‑letter sample. Try a 1‑letter key, then a long one.</div>
+<h2 style="margin-top:14px">Key‑length detector (Index of Coincidence)</h2><canvas class="ch" id="vi"></canvas><div class="mu">Average IoC of columns for guessed lengths 1–12. English ≈ 0.066, random ≈ 0.038. Spikes reveal the key length.</div></div>
+<div class="card"><span class="tag dy">DO IT YOURSELF</span><div id="q5"></div></div></section>
+
+<section id="s6"><div class="card"><span class="tag rd">BOSS ROUND</span><h2>Concept check</h2><p class="mu">Mixed review of the whole module. Remember: classical design = “build, break, patch” with no proof of security.</p><div id="q6"></div></div></section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=i=>document.getElementById(i),AL='ABCDEFGHIJKLMNOPQRSTUVWXYZ',EN=[8.2,1.5,2.8,4.3,12.7,2.2,2,6.1,7,.15,.77,4,2.4,6.7,7.5,1.9,.1,6,6.3,9.1,2.8,1,2.4,.15,2,.07];
+const rot=(c,n)=>String.fromCharCode(((c.charCodeAt(0)-65+n)%26+26)%26+65),shift=(t,k)=>t.toUpperCase().replace(/[A-Z]/g,c=>rot(c,k));
+const vig=(t,k,d)=>{let j=0;return t.toUpperCase().replace(/[A-Z]/g,c=>rot(c,d*(k.charCodeAt(j++%k.length)-65)))},clean=s=>s.toUpperCase().replace(/[^A-Z]/g,'');
+const fq=t=>{const a=Array(26).fill(0);let n=0;for(const c of t)if(c>='A'&&c<='Z'){a[c.charCodeAt(0)-65]++;n++}return a.map(v=>n?v*100/n:0)};
+const ioc=t=>{const a=Array(26).fill(0);for(const c of t)a[c.charCodeAt(0)-65]++;const n=t.length;return n<2?0:a.reduce((s,v)=>s+v*(v-1),0)/(n*(n-1))};
+const P="CRYPTOGRAPHY IS THE SCIENCE OF SECRET WRITING AND CRYPTANALYSIS IS THE ART OF BREAKING IT. EVERY LETTER OF THE ALPHABET APPEARS WITH A KNOWN FREQUENCY IN ENGLISH AND A SIMPLE SUBSTITUTION CIPHER DOES NOT HIDE THAT FACT. THE MOST COMMON LETTER IS USUALLY E AND THE NEXT ARE T AND A. A CLEVER ATTACKER MATCHES THESE PEAKS AND THEN USES COMMON WORDS LIKE THE AND OF TO RECOVER THE WHOLE MESSAGE WITHOUT EVER TRYING ALL THE KEYS.";
+function bars(id,ser,labels){const c=$(id),x=c.getContext('2d'),W=c.width=c.clientWidth*2,H=c.height=320,n=ser[0].d.length,m=Math.max(...ser.flatMap(s=>s.d),.001),bw=W/n,col=getComputedStyle(document.body).color;x.clearRect(0,0,W,H);ser.forEach((s,k)=>{x.fillStyle=s.c;s.d.forEach((v,i)=>{const h=v/m*(H-50);x.fillRect(i*bw+bw*(.1+.4*k/ser.length),H-30-h,bw*.8/ser.length,h)})});x.fillStyle=col;x.font='22px monospace';x.textAlign='center';for(let i=0;i<n;i++)x.fillText(labels?labels[i]:AL[i],i*bw+bw/2,H-6)}
+/* progress + questions */
+const DONE=new Set();let TOTAL=0;const prog=()=>{$('pg').style.width=DONE.size/TOTAL*100+'%';$('pt').textContent=DONE.size+' / '+TOTAL+' challenges complete'+(DONE.size==TOTAL?' 🎉 You’ve mastered Module 6!':'')};
+function qs(id,list){const el=$(id);list.forEach((q,i)=>{TOTAL++;const key=id+i,d=document.createElement('div');d.className='q';let h='<b>Q'+(i+1)+'.</b> '+q.t+'<div class="row">';h+=q.o?q.o.map((o,j)=>'<button class="opt" data-j="'+j+'">'+o+'</button>').join(''):'<input placeholder="your answer"><button class="chk">Check</button>';h+='</div><div class="fb"></div>'+(q.h?'<details><summary>Hint</summary>'+q.h+'</details>':'');d.innerHTML=h;el.appendChild(d);const fb=d.querySelector('.fb'),res=ok=>{fb.className='fb '+(ok?'ok':'no');fb.textContent=ok?'✓ '+q.e:'✗ Not quite — experiment in the lab above and retry.';if(ok&&!DONE.has(key)){DONE.add(key);prog()}};d.querySelectorAll('.opt').forEach(b=>b.onclick=()=>res(+b.dataset.j==q.a));const ch=d.querySelector('.chk');if(ch){const inp=d.querySelector('input');ch.onclick=()=>res(q.a(inp.value.trim().toUpperCase()));inp.onkeydown=e=>e.key=='Enter'&&ch.click()}})}
+const ns=s=>s.replace(/\s/g,'');
+qs('q1',[{t:'Eve flips a few bits of the message while it is in transit. Which CIA‑N goal is broken?',o:['Confidentiality','Integrity','Availability','Non‑repudiation'],a:1,e:'Integrity — fix it with hashing/tamper detection. You saw Bob get garbage when “Eve tampers” was on.'},
+{t:'Alice later claims “I never sent that!” Which control stops her denying it?',o:['Redundancy','Steganography','Digital signatures','ROT‑13'],a:2,e:'Digital signatures give non‑repudiation.'},
+{t:'Turn encryption OFF in the 3D lab and send. What does Eve read? (type the word MEET or NONE)',a:v=>v=='MEET',e:'Eve reads the plaintext — confidentiality lost.',h:'Look at the “Eve sees” line.'},
+{t:'According to Kerckhoffs’s principle, what is the ONLY thing that must stay secret?',o:['The algorithm','The key','Both','The channel'],a:1,e:'Keys are easier to keep secret and to change than algorithms.'}]);
+qs('q2',[{t:'Encrypt <b>STUDENT</b> with key 3.',a:v=>ns(v)=='VWXGHQW',e:'S→V, T→W, U→X, D→G, E→H, N→Q, T→W.',h:'Use the wheel, or compute (m+3) mod 26.'},
+{t:'Encrypt <b>ATTACK TONIGHT</b> with key 2.',a:v=>ns(v)=='CVVCEMVQPKIJV',e:'Matches the slide: CVVCEM VQPKIJV.'},
+{t:'Decrypt <b>WKLV LV HDVB</b> (key is 3).',a:v=>v.replace(/\s+/g,' ')=='THIS IS EASY',e:'Decrypt = shift the other way.'},
+{t:'Use the brute‑force machine on URYYBJBEYQ. Which key reveals English?',a:v=>v=='13'||v=='-13'||v=='13 (ROT13)',e:'Key 13 = ROT‑13 → HELLOWORLD.',h:'Look for the green‑outlined row.'},
+{t:'At most how many keys must Eve try against the shift cipher?',a:v=>v=='26',e:'Only 26 keys — a computer needs milliseconds.'}]);
+qs('q3',[{t:'How many keys does a 4‑bit key give?',a:v=>v=='16',e:'2×2×2×2 = 16.'},{t:'How many keys does a 10‑bit key give?',a:v=>v=='1024',e:'2¹⁰ = 1024.'},
+{t:'At the Exascale rate, what is the smallest key length (bits) whose <i>average</i> brute‑force time exceeds 1 year?',a:v=>v=='86',e:'2⁸⁵ keys ÷ 10¹⁸/s ≈ 1.2 years.',h:'Drag the slider until the average time just passes 1 year.'},
+{t:'Is a huge key space alone enough for a strong cipher?',o:['Yes','No — it is necessary but not sufficient'],a:1,e:'Mono‑alphabetic has 2⁸⁸ keys yet falls to frequency analysis.'}]);
+qs('q4',[{t:'Which letter is most common in English?',a:v=>v=='E',e:'E (≈12.7%), then T, A, O.'},{t:'26! is about 2 to the power ___ (bits).',a:v=>v=='88',e:'≈ 2⁸⁸ keys: too many to brute force.'},
+{t:'Solve the puzzle above. What is the first plaintext word?',a:v=>v=='CRYPTOGRAPHY',e:'Great cryptanalysis! Common words (THE, AND, OF) help.'},{t:'What does a substitution cipher leak?',o:['The key length','Letter frequencies','The algorithm','Nothing'],a:1,e:'Statistical properties of plaintext survive.'}]);
+qs('q5',[{t:'Encrypt <b>ATTACKATDAWN</b> with key <b>LEMON</b>.',a:v=>ns(v)=='LXFOPVEFRNHR',e:'Key letters repeat: LEMONLEMONLE.'},{t:'Decrypt <b>LXFOPVEFRNHR</b> with key LEMON.',a:v=>v=='ATTACKATDAWN',e:'Subtract each key shift.'},
+{t:'Set the key to KAREL. What is the smallest key length where IoC spikes in the detector?',a:v=>v=='5',e:'Spikes at 5 (and 10, its multiple).'},
+{t:'Kasiski: a trigram repeats at distances 20, 35 and 50. Likely key length (gcd)?',a:v=>v=='5',e:'gcd(20,35,50)=5.'},
+{t:'Why does Vigenère resist simple frequency analysis?',o:['Bigger alphabet','One ciphertext letter maps to many plaintext letters','It uses public keys','It is unbreakable'],a:1,e:'Frequencies get masked — but known key length breaks it again.'}]);
+qs('q6',[{t:'Which pair is correct?',o:['AES – asymmetric','RSA – symmetric','AES – symmetric, RSA – asymmetric','DES – asymmetric'],a:2,e:'Symmetric: same key. Asymmetric: public/private pair.'},{t:'Symmetric crypto’s big challenge?',o:['Speed','Key exchange','Long ciphertext','Plaintext size'],a:1,e:'Alice and Bob must share the secret key safely first.'},
+{t:'What is cryptanalysis?',o:['Hiding messages','The science (and art) of breaking cryptosystems','Compressing data','Key storage'],a:1,e:'Cryptography hides; cryptanalysis breaks.'},{t:'Which attack needs NO knowledge of the cipher’s internals?',o:['Brute force','Frequency analysis','Kasiski','IoC'],a:0,e:'Brute force treats the cipher as a black box.'},
+{t:'Classical cryptography’s weakness as a design approach?',o:['Too fast','Build‑break‑patch with no security proof','Needs quantum computers','Uses public keys'],a:1,e:'Modern crypto relies on rigorous definitions and proofs.'}]);
+prog();
+/* tabs */
+const names=['Alice·Bob·Eve (3D)','Shift cipher','Key space','Mono‑alphabetic','Vigenère','Boss round'];
+names.forEach((n,i)=>{const b=document.createElement('button');b.textContent=(i+1)+'. '+n;b.onclick=()=>show(i);$('nav').appendChild(b)});
+function show(i){document.querySelectorAll('section').forEach((s,j)=>s.classList.toggle('on',i==j));document.querySelectorAll('nav button').forEach((b,j)=>b.classList.toggle('on',i==j));redraw()}
+/* 3D */
+(function(){const box=$('c3d');if(!window.THREE){box.innerHTML='<p style="color:#fff;padding:20px">3D library blocked on this network — the rest of the lab still works.</p>';return}
+const W=()=>box.clientWidth||600,H=360,r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setSize(W(),H);r.setPixelRatio(Math.min(devicePixelRatio,2));box.appendChild(r.domElement);
+const s=new THREE.Scene(),cam=new THREE.PerspectiveCamera(50,W()/H,.1,100);cam.position.set(0,3,11);cam.lookAt(0,.8,0);s.add(new THREE.AmbientLight(0xffffff,.7));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(3,6,5);s.add(dl);const g=new THREE.Group();s.add(g);
+function spr(t,col,fs,w){const c=document.createElement('canvas');c.width=w;c.height=96;const tx=new THREE.CanvasTexture(c),sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true}));sp.scale.set(w/110,.87,1);sp.u={c,tx,w,fs};set(sp,t,col);return sp}
+function set(sp,t,col){const{c,tx,w,fs}=sp.u,x=c.getContext('2d');x.clearRect(0,0,w,96);x.font='bold '+fs+'px monospace';x.textAlign='center';x.fillStyle=col;x.fillText(t,w/2,64);tx.needsUpdate=true}
+const mat=c=>new THREE.MeshStandardMaterial({color:c});
+function who(x,z,c,l,sc){const m=new THREE.Group(),b=new THREE.Mesh(new THREE.CylinderGeometry(.5,.75,1.4,24),mat(c)),h=new THREE.Mesh(new THREE.SphereGeometry(.45,24,24),mat(c));h.position.y=1.15;m.add(b,h);const t=spr(l,'#fff',40,300);t.position.y=2.1;m.add(t);m.position.set(x,0,z);m.scale.setScalar(sc||1);g.add(m);return m}
+who(-4.5,0,0x3b82f6,'Alice');who(4.5,0,0x22c55e,'Bob');const eve=who(0,-2.6,0xef4444,'Eve (adversary)',1.1);
+const ch=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,9,12),mat(0x64748b));ch.rotation.z=Math.PI/2;ch.position.y=.6;g.add(ch);
+const pk=new THREE.Group(),cube=new THREE.Mesh(new THREE.BoxGeometry(.6,.6,.6),new THREE.MeshStandardMaterial({color:0xfacc15,emissive:0x443300}));pk.add(cube);const pl=spr('',"#fde68a",38,420);pl.position.y=.95;pk.add(pl);pk.position.set(-4.5,.6,0);pk.visible=false;g.add(pk);
+const tap=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,1,-2.6),new THREE.Vector3(0,.6,0)]),new THREE.LineBasicMaterial({color:0xef4444}));tap.visible=false;g.add(tap);
+let t=-1,S={};
+$('k').oninput=()=>$('kv').textContent=$('k').value;
+$('send').onclick=()=>{const m=clean($('m').value)||'HELLO',k=+$('k').value,on=$('en').checked,tp=$('tp').checked;const enc=on?shift(m,k):m,seen=tp?rot(enc[0],1)+enc.slice(1):enc,got=on?shift(seen,-k):seen;S={m,enc,seen,got,on,tp};t=0;pk.visible=true;set(pl,enc,'#fde68a');$('pn').innerHTML='Packet in flight…'};
+function done(){const{m,enc,got,on,tp,seen}=S;let w='';if(!on)w+='<br>⚠ <b>Confidentiality broken</b>: Eve read the plaintext.';else w+='<br>🔒 Eve only saw gibberish.';if(got!==m)w+='<br>⚠ <b>Integrity violated</b>: Bob’s message differs from Alice’s.';$('pn').innerHTML='Alice sent: '+m+'<br>Eve sees: <b>'+enc+'</b>'+(tp?' → forwards '+seen:'')+'<br>Bob receives: <b>'+got+'</b>'+w}
+let drag=false,lx=0;box.onpointerdown=e=>{drag=true;lx=e.clientX};addEventListener('pointerup',()=>drag=false);addEventListener('pointermove',e=>{if(drag){g.rotation.y=Math.max(-1.2,Math.min(1.2,g.rotation.y+(e.clientX-lx)*.008));lx=e.clientX}});
+(function loop(){requestAnimationFrame(loop);const T=performance.now()/1000;eve.position.y=Math.sin(T*2)*.12;cube.rotation.y+=.04;if(t>=0&&t<=1){t+=.006;pk.position.x=-4.5+9*Math.min(t,1);tap.visible=t>.45&&t<.6;if(t>.5&&S.tp)set(pl,S.seen,'#fca5a5');if(t>=1){set(pl,S.got,'#86efac');t=2;done();setTimeout(()=>pk.visible=false,1500)}}r.render(s,cam)})();
+addEventListener('resize',()=>{r.setSize(W(),H);cam.aspect=W()/H;cam.updateProjectionMatrix()})})();
+/* shift cipher */
+function wheel(){const c=$('wh'),x=c.getContext('2d'),k=+$('sk').value,R=130,col=getComputedStyle(document.body).color;x.clearRect(0,0,300,300);x.translate(150,150);x.font='bold 17px monospace';x.textAlign='center';x.textBaseline='middle';x.strokeStyle='#8884';[R+18,R-18,R-52].forEach(q=>{x.beginPath();x.arc(0,0,q,0,7);x.stroke()});
+for(let i=0;i<26;i++){const a=i*Math.PI*2/26-Math.PI/2;x.fillStyle=col;x.fillText(AL[i],Math.cos(a)*R,Math.sin(a)*R);const b=a+k*Math.PI*2/26;x.fillStyle='#f97316';x.fillText(AL[i],Math.cos(b)*(R-35),Math.sin(b)*(R-35))}x.setTransform(1,0,0,1,0,0);x.fillStyle=col;x.font='12px sans-serif';x.fillText('k = '+k,150,150)}
+function shiftUp(){const k=+$('sk').value;$('skv').textContent=k;$('so').textContent=shift($('st').value,k*$('sd').value)||'…';wheel()}
+['st','sk','sd'].forEach(i=>$(i).oninput=shiftUp);
+function brute(){const t=clean($('bt').value),rows=[];for(let k=0;k<26;k++){const d=shift(t,-k);rows.push([k,d,[...d].reduce((s,c)=>s+EN[c.charCodeAt(0)-65],0)])}const b=Math.max(...rows.map(r=>r[2]));$('bg').innerHTML=rows.map(r=>'<div class="'+(r[2]==b?'best':'')+'" data-k="'+r[0]+'">k='+r[0]+': '+r[1]+'</div>').join('');$('bg').onclick=e=>{const k=e.target.dataset.k;if(k){$('sk').value=k;$('st').value=t;$('sd').value=-1;shiftUp();$('st').scrollIntoView({block:'center'})}}}
+$('bt').oninput=brute;
+/* key space */
+function ks(){const n=+$('nb').value,r=+$('rt').value;$('nbv').textContent=n;const K=2n**BigInt(n),kn=Number(K),sec=kn/2/r,y=sec/3.156e7;const f=v=>v<1e15?v.toLocaleString('en'):v.toExponential(2);
+const tm=sec<.001?'instantly':sec<60?sec.toFixed(2)+' s':sec<3600?(sec/60).toFixed(1)+' min':sec<86400?(sec/3600).toFixed(1)+' hours':y<1?(sec/86400).toFixed(1)+' days':y<1e6?y.toLocaleString('en',{maximumFractionDigits:1})+' years':y.toExponential(2)+' years';
+$('ko').innerHTML='Keys = 2<sup>'+n+'</sup> = '+(K.toString().length>15?kn.toExponential(3):K.toString())+'<br>Average time to find key: <b>'+tm+'</b>'+(y>1.38e10?'<br>⚠ longer than the age of the universe ('+(y/1.38e10).toExponential(1)+'×)':'')+(n<=64&&y<1?'<br><b class="no">❌ Not secure!</b>':n>=128?'<br><b class="ok">✅ Computationally secure vs brute force</b>':'');
+$('kb').style.width=Math.max(0,Math.min(100,(Math.log10(Math.max(y,1e-30))+9)/86*100))+'%'}
+['nb','rt'].forEach(i=>$(i).oninput=ks);
+/* mono */
+const KEY='XEUADNBKVMROCQFSYHWGLZIJPT',INV={};[...KEY].forEach((c,i)=>INV[c]=AL[i]);const C=P.replace(/[A-Z]/g,c=>KEY[c.charCodeAt(0)-65]);let G={};
+function mono(){const cf=fq(C),cnt=Array(26).fill(0);for(const c of C)if(c>='A'&&c<='Z')cnt[c.charCodeAt(0)-65]++;bars('mf',[{d:EN,c:'#6366f1'},{d:cf,c:'#f97316'}]);
+$('mc').textContent=C;let ok=true;$('md').innerHTML=[...C].map(c=>{if(c<'A'||c>'Z')return c;const g=G[c];if(g!==INV[c])ok=false;return g?'<b class="ok">'+g+'</b>':'<span class="dim">'+c+'</span>'}).join('');$('mw').className='fb '+(ok?'ok':'');$('mw').textContent=ok?'🎉 Cracked! You recovered the full plaintext using frequency analysis.':'';
+if(!$('mg').children.length)$('mg').innerHTML=[...AL].map(c=>'<div><label>'+c+' ['+cnt[c.charCodeAt(0)-65]+']</label><input maxlength="1" data-c="'+c+'"></div>').join('');
+$('mg').querySelectorAll('input').forEach(i=>i.value=G[i.dataset.c]||'')}
+$('mg').oninput=e=>{const v=e.target.value.toUpperCase().replace(/[^A-Z]/g,'');if(v)G[e.target.dataset.c]=v;else delete G[e.target.dataset.c];mono()};
+$('ms').onclick=()=>{const cf=fq(C),o=[...AL].sort((a,b)=>cf[b.charCodeAt(0)-65]-cf[a.charCodeAt(0)-65]),e='ETAOINSHRDLCUMWFGYPBVKJXQZ';G={};o.forEach((c,i)=>G[c]=e[i]);mono()};
+$('mh').onclick=()=>{const cf=fq(C),o=[...AL].filter(c=>cf[c.charCodeAt(0)-65]>0&&G[c]!==INV[c]).sort((a,b)=>cf[b.charCodeAt(0)-65]-cf[a.charCodeAt(0)-65]);if(o.length)G[o[0]]=INV[o[0]];mono()};
+$('mr').onclick=()=>{G={};mono()};
+/* vigenere */
+function vg(){const k=clean($('vk').value)||'A',t=$('vt').value.toUpperCase(),L=[...t].filter(c=>/[A-Z]/.test(c)).slice(0,14);let h='<tr><th>Plain</th>'+L.map(c=>'<td>'+c+'</td>').join('')+'</tr><tr><th>Key</th>'+L.map((c,i)=>'<td>'+k[i%k.length]+'</td>').join('')+'</tr><tr><th>Shift</th>'+L.map((c,i)=>'<td>'+(k.charCodeAt(i%k.length)-65)+'</td>').join('')+'</tr><tr><th>Cipher</th>'+L.map((c,i)=>'<td><b>'+rot(c,k.charCodeAt(i%k.length)-65)+'</b></td>').join('')+'</tr>';$('vtab').innerHTML=h;$('vo').textContent=vig(t,k,1);
+const S=clean(P),V=vig(S,k,1);bars('vf',[{d:fq(S),c:'#6366f1'},{d:fq(V),c:'#f97316'}]);const io=[],lb=[];for(let m=1;m<=12;m++){let a=0;for(let j=0;j<m;j++)a+=ioc([...V].filter((c,i)=>i%m==j).join(''));io.push(a/m);lb.push(m)}bars('vi',[{d:io,c:'#14b8a6'}],lb)}
+['vt','vk'].forEach(i=>$(i).oninput=vg);
+function redraw(){shiftUp();brute();ks();mono();vg()}
+show(0);addEventListener('resize',redraw);
+</script></body></html>
